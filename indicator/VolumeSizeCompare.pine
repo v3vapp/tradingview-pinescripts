@@ -1,0 +1,9 @@
+//@version=5
+indicator(title="Size")
+
+size    = ta.sma(volume,4999)*ta.sma(close,4999)
+BTCsize = request.security("BTCUSDT","1",size)
+sizeRate = math.round((size/BTCsize)*100,1)
+
+var table TableA = table.new(position.middle_left, 10, 10)
+table.cell(TableA,0,0, str.tostring(sizeRate)+"%", text_color = color.new(#ffffff,0),text_halign=text.align_left)

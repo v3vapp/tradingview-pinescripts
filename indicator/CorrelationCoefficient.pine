@@ -1,0 +1,20 @@
+//@version=5
+indicator(title="Correlation Coeff", shorttitle="CC", format=format.price, precision=2)
+sym = input.symbol(title="Symbol", defval="BINANCE:BTCUSDT", confirm=false)
+src = input(close, title="Source")
+length = input.int(5, minval=1)
+res=timeframe.period
+ovr = request.security(sym, res, src)
+
+hline(-0.5,"strong movement",color.new(color.white,90),linestyle=hline.style_solid)
+hline(-1,"strong movement",color.new(color.white,90),linestyle=hline.style_solid)
+corr=ta.correlation(src, ovr, length)
+plot(corr>0?na:corr, "Correlation", color=color.new(color.yellow,30), style=plot.style_histogram)
+
+//BGC///////////////////////////////////////////////////////////////////////////
+
+Color  = color.new(color.yellow,75)
+color ColorUnknown = na
+strong = corr < -0.5
+BGC = strong?Color: ColorUnknown
+bgcolor(BGC)

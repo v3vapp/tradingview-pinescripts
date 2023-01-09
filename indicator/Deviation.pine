@@ -1,0 +1,135 @@
+//@version=4
+study("DEVIATION","DEVIATION",true,precision=2)
+lime  = color.new(#5aff19,0)
+
+f_noRepaint(res, src)  => security(syminfo.tickerid, res, src[barstate.isrealtime ? 1:0])
+
+onoff_sh   = input(true, " S高 表示 ")
+onoff_sl   = input(true, " S安 表示 ")
+onoff_do   = input(false,  " 日中 始値 表示 ")
+onoff_dh   = input(false,  " 日中 高値 表示 ")
+onoff_dl   = input(false,  " 日中 安値 表示 ")
+onoff_yh   = input(false,  " 前日 高値 表示 ")
+onoff_yl   = input(false,  " 前日 安値 表示 ")
+onoff_yo   = input(false,  " 前日 始値 表示 ")
+onoff_yc   = input(false,  " 前日 終値 表示 ")
+onoff_yyc  = input(false,  " 一昨日 終値 表示 ")
+onoff_VWAP = input(true,  " VWAP表示 ")
+onoff_VWAPlast  = input(false,  " VWAP.lastday表示 ")
+onoff_VWAPalert = input(true,  " VWAP.ALERT表示 ")
+onoff_VWAPMAX   = input(false,  " VWAP.MAX表示 ")
+onoff_VWAPfill  = input(false,  " VWAP.FILL表示 ")
+onoff_bgc       = input(false, " 背景表示 ")
+
+m1 = (timeframe.period=="1")
+m3 = (timeframe.period=="3")
+m5 = (timeframe.period=="5")
+m15 = (timeframe.period=="15")
+m30 = (timeframe.period=="30")
+
+maxLen =
+ bar_index > 9999 ? 9999 :
+ bar_index > bar_index - 1 ? bar_index+ 1  : 300
+maxLen := bar_index == 0 ? 9999 : maxLen
+smaLen =
+ bar_index > 4999 ? 4999 : 
+ bar_index < 4999 ? round(bar_index*0.7) : 300
+smaLen := bar_index == 0 ? 4999 : smaLen
+
+vwap1=f_noRepaint("D", vwap)
+
+vwapKairi = (close / vwap)
+vwapPoint = ((vwapKairi) - 1) *100
+vwapLine  = vwapKairi*vwap
+
+vwapHighestWeek = highest(vwapKairi,  m1?1500:m3?500:m5?300:m15?100:0)
+vwapLowestWeek  = lowest(vwapKairi,   m1?1500:m3?500:m5?300:m15?100:0)
+vwapMaxHigh     = highest(vwapKairi,  maxLen)
+vwapMaxLow      = lowest(vwapKairi,   maxLen)
+vwapAlertHigh   = sma(vwapHighestWeek,smaLen)
+vwapAlertLow    = sma(vwapLowestWeek, smaLen)
+timeframeMini   = (m1 or m3 or m5 or m15 or m30)
+textPositionR   = text.align_right
+textPositionL   = text.align_left
+
+f_VWAPhighLevel(inputVWAPhighLevel) => VWAPhighLevel = vwap*(1+inputVWAPhighLevel*0.01)
+f_VWAPlowLevel(inputVWAPlowLevel)   => VWAPlowLevel  = vwap*(1+inputVWAPlowLevel*0.01)
+f_realtime(src)                     => security(syminfo.tickerid, "D", src[barstate.isrealtime ? 1:0])
+
+do  = security(syminfo.tickerid, "D", open, lookahead=barmerge.lookahead_on)
+dh  = security(syminfo.tickerid, "D", high, lookahead=barmerge.lookahead_on)
+dl  = security(syminfo.tickerid, "D", low,  lookahead=barmerge.lookahead_on)
+c   = f_noRepaint( "D", close)
+yyc = f_noRepaint( "D", close[1])
+yh  = f_noRepaint( "D", high)
+yl  = f_noRepaint( "D", low)
+yo  = f_noRepaint( "D", open[1])
+wh  = f_noRepaint( "W", high)
+wl  = f_noRepaint( "W", low)
+mh  = f_noRepaint( "M", high)
+ml  = f_noRepaint( "M", low)
+
+plotStyle     = plot.style_cross
+plotVWAPstyle = plot.style_linebr
+
+plot_yc         = plot(timeframeMini and onoff_yc   ? c   : na, "前日 終値",   style=plotStyle,  color=color.new(color.purple,0))
+plot_do         = plot(timeframeMini and onoff_do   ? do  : na, "日中 始値",   style=plotStyle,  color=color.new(color.orange,0))
+plot_dh         = plot(onoff_dh and timeframeMini   ? dh  : na, "日中 高値",   style=plotStyle,  color=color.new(color.white,50))
+plot_dl         = plot(onoff_dl and timeframeMini   ? dl  : na, "日中 安値",   style=plotStyle,  color=color.new(color.white,50))
+plot_yh         = plot(onoff_yh and timeframeMini   ? yh  : na, "前日 高値",   style=plotStyle,  color=#ff0000)
+plot_yl         = plot(onoff_yl and timeframeMini   ? yl  : na, "前日 安値",   style=plotStyle,  color=color.new(color.blue,0))
+plot_yyc        = plot(onoff_yyc and timeframeMini  ? yyc : na, "一昨日 終値", style=plotStyle,  color=color.new(color.purple,50))
+plot_yo         = plot(onoff_yo and timeframeMini   ? yo  : na, "前日 始値",   style=plotStyle,  color=color.new(color.orange,50))
+
+plotVWAP        = plot(timeframeMini and onoff_VWAP?vwap                    :na, title="VWAP", color = close<vwap?#ff0000:color.aqua, linewidth=3, style=plotVWAPstyle)
+plot_VWAPlast   = plot(onoff_VWAPlast?vwap1                                 :na, title="VWAP LAST DAY", color=color.green,  style=plotStyle)
+plotAlertHigh   = plot(timeframeMini and onoff_VWAPalert?vwapAlertHigh*vwap :na, title="Sell", color=color.aqua,        style=plotVWAPstyle, linewidth=1, display=display.all)
+plotAlertLow    = plot(timeframeMini and onoff_VWAPalert?vwapAlertLow*vwap  :na, title="Buy",  color=#ff0000, style=plotVWAPstyle, linewidth=1, display=display.all)
+//plotVWAPmaxHigh = plot(timeframeMini and onoff_VWAPMAX?vwapMaxHigh*vwap    :na, color = color.new(color.aqua,80), title="VWAP.MaxLow",    style=plotStyle, display=display.all)
+//plotVWAPmaxLow  = plot(timeframeMini and onoff_VWAPMAX?vwapMaxLow*vwap     :na, color = color.new(color.red,80),  title="VWAP.MaxHigh",   style=plotStyle, display=display.all)
+//fill(plotVWAPmaxHigh,plotAlertHigh, color=onoff_VWAPfill?color.new(color.aqua,90):color.rgb(111,111,111,100))
+//fill(plotVWAPmaxLow,plotAlertLow,   color=onoff_VWAPfill?color.new(red,90):color.rgb(111,111,111,100))
+
+//ATR//
+ematr   = security(syminfo.ticker,   "D", ema(tr(true), 14))
+open1   = security(syminfo.ticker,   "D", open,lookahead=barmerge.lookahead_on)
+close1  = security(syminfo.tickerid, "D", close[barstate.isrealtime ? 1:0])
+step    = plot.style_cross
+lot     = ematr/4
+ematrLv1  = vwap+lot
+ematrLvN1 = vwap-lot
+ematrLv2  = vwap+lot*2
+ematrLvN2 = vwap-lot*2
+ematrLv3  = vwap+lot*3
+ematrLvN3 = vwap-lot*3
+ematrLv4  = vwap+lot*4
+ematrLvN4 = vwap-lot*4
+
+ematr0  = plot(ematr,     "ATR",     color=color.new(#B71C1C, 0),   display=display.none)
+ematr1  = plot(ematrLv1,  "ematr3",  color=color.new(#ff0000, 0),   style = plot.style_line, display=display.none)
+ematrN1 = plot(ematrLvN1, "ematr2",  color=color.new(color.aqua, 0),style =  plot.style_line, display=display.none)
+ematr2  = plot(ematrLv2,  "ematr1",  style = step, display=display.none)
+ematrN2 = plot(ematrLvN2, "ematrN3", style = step, display=display.none)
+
+fill(ematr1,ematr2,color.new(color.aqua,70))
+fill(ematrN1,ematrN2,color.new(#ff0000,75))
+
+ematrBlock      = ematr/4 
+ematrPoint      = ematr/close
+ematrBlockPoint = ematrPoint/4
+profit          = highest(high,1)-ematrBlock
+loss            = lowest(low,1)+ematrBlock
+white50         = color.new(color.white,50)
+style1          = plot.style_circles
+//plotProfit=plot(profit, "x" ,timeframe.isintraday ? color.white : na, style=plot.style_line, linewidth=1, offset=0)
+//plotLoss  =plot(loss  , "x" ,timeframe.isintraday ? color.white : na, style=plot.style_line, linewidth=1, offset=0)
+//fill(plotProfit,plotLoss,color.new(color.gray,80))
+
+
+vwapTable2= table.new(position.top_right,10,10,bgcolor=color.new(#000000,30))
+table.cell(vwapTable2,0,0,tostring(round(vwapAlertHigh*vwap)) + "\n" + tostring((round(vwapAlertHigh,3)- 1 )* 100) + "%" ,
+  text_color = color.aqua,    text_halign = textPositionR)
+table.cell(vwapTable2,1,0,tostring(round(vwap)) +
+ "\n" +tostring(round(vwapPoint,1)) + "%" , text_color = lime, text_halign =textPositionR)
+table.cell(vwapTable2,2,0,tostring(round(vwapAlertLow*vwap)) +"\n" +tostring((round(vwapAlertLow,3)- 1 )* 100) + "%",
+ text_color = color.red, text_halign = textPositionR)

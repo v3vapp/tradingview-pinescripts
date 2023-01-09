@@ -1,0 +1,90 @@
+//@version=5
+
+strategy(title="BB strategy", overlay=true,pyramiding=1,calc_on_every_tick = true)
+
+
+//////////////////////////// ATR //////////////////////////////////////////////
+
+ATR    = request.security(syminfo.ticker,"D",ta.atr(10),  lookahead=barmerge.lookahead_on)
+ATRpct = math.round(ATR/close*100,1)
+
+//////////////////////////// BB ///////////////////////////////////////////////
+
+day = 24
+hour_min = 60
+//////////////
+
+cal_days = 25
+
+//4h bar
+tf_A = "240"
+tf_A_bars = ((day*hour_min)/240)*cal_days
+//1h bar
+tf_B = "60"
+tf_B_bars = ((day*hour_min)/60)*cal_days
+//30min bar
+tf_C = "30"
+tf_C_bars = ((day*hour_min)/30)*cal_days
+
+
+basis =  
+ timeframe.period==tf_A?ta.sma(close, tf_A_bars):
+ timeframe.period==tf_B?ta.sma(close, tf_B_bars) :
+ timeframe.period==tf_C?ta.sma(close, tf_C_bars) :
+ na
+dev2  =  
+ timeframe.period==tf_A?2*ta.stdev(close, tf_A_bars):
+ timeframe.period==tf_B?2*ta.stdev(close, tf_B_bars):
+ timeframe.period==tf_C?2*ta.stdev(close, tf_C_bars):
+ na
+dev3  =  
+ timeframe.period==tf_A?3*ta.stdev(close, tf_A_bars):
+ timeframe.period==tf_B?3*ta.stdev(close, tf_B_bars):
+ timeframe.period==tf_C?3*ta.stdev(close, tf_C_bars):
+ na
+
+upper2 = basis + dev2
+upper3 = basis + dev3
+lower2 = basis - dev2
+lower3 = basis - dev3
+
+
+//////////////////////////// Plots ////////////////////////////////////////////
+
+upper_bb_col = color.blue
+lower_bb_col = color.red
+
+p_basisv = plot(basis,  "Basis",  color=color.yellow)
+p_upper2 = plot(upper2, "Upper2", color=upper_bb_col)
+p_upper3 = plot(upper3, "Upper3", color=upper_bb_col, linewidth=2)
+p_lower2 = plot(lower2, "Lower2", color=lower_bb_col)
+p_lower3 = plot(lower3, "Lower3", color=lower_bb_col, linewidth=2)
+
+fill(p_upper2,p_upper3, color.new(color.blue,90))
+fill(p_lower2,p_lower3, color.new(color.red,90))
+
+
+/////////////////////////////  Conditions /////////////////////////////////////
+
+
+c_long = close <= lower3
+c_exit = close >= basis
+
+strategy.entry("long", strategy.long, when = c_long)
+strategy.close("long", when = c_exit)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

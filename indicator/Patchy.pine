@@ -1,0 +1,52 @@
+//@version=4
+study(title="Patchy",shorttitle="Patchy", overlay= false, format=format.volume, precision=1)
+lime  = color.new(#5aff19,0)
+//
+m1 = (timeframe.period=="1")
+m3 = (timeframe.period=="3")
+m5 = (timeframe.period=="5")
+m15 = (timeframe.period=="15")
+m30 = (timeframe.period=="30")
+m60 = (timeframe.period=="60")
+m100 = (timeframe.period=="100")
+timeframeMini = (m1 or m3 or m5 or m15 or m30 or m60 or m100)
+//
+maxLen =
+ bar_index > 9999 ? 9999 :
+ bar_index > bar_index - 1 ? bar_index+ 1  : 300
+maxLen := bar_index == 0 ? 9999 : maxLen
+smaLen =
+ bar_index > 4999 ? 4999 : 
+ bar_index < 4999 ? round(bar_index*0.7) : 300
+smaLen := bar_index == 0 ? 4999 : smaLen
+//
+vwapKairi = (close / vwap)
+vwapPoint = (vwapKairi - 1) *100
+//
+vwapHighestWeek = highest(vwapPoint,  m1?1500:m3?500:m5?300:m15?100:m30?50:m60?25:m100?15:0)
+vwapLowestWeek  = lowest(vwapPoint,   m1?1500:m3?500:m5?300:m15?100:m30?50:m60?25:m100?15:0)
+//vwapMaxHigh     = highest(vwapPoint,  maxLen)
+//vwapMaxLow      = lowest(vwapPoint,   maxLen)
+vwapAlertHigh   = sma(vwapHighestWeek,smaLen)
+vwapAlertLow    = sma(vwapLowestWeek, smaLen)
+//
+//plotZero        = hline(0,           color=color.new(lime,100), title="zero", linestyle=hline.style_solid, linewidth=1)
+plotVWAP        = plot(vwapPoint, color = vwapPoint<0?#ff0000 : color.aqua, title="VWAP乖離率", style=plot.style_columns, linewidth=1)
+//plotVWAPmaxHigh = plot(vwapMaxHigh, color = color.new(color.aqua,100),title="MaxHigh乖離率",   style=plot.style_line, linewidth=1)
+//plotVWAPmaxLow  = plot(vwapMaxLow,  color = color.new(red,100),       title="Maxlow乖離率",    style=plot.style_line, linewidth=1)
+plotAlertHigh   = plot(vwapAlertHigh, color = color.new(lime,50),       title="AlertHigh乖離率", style=plot.style_line)
+plotAlertLow    = plot(vwapAlertLow,  color = color.new(lime,50),       title="AlertLow乖離率",  style=plot.style_line)
+//
+ematr      = security(syminfo.ticker,   "D", ema(tr(true), 14))
+lot        = ematr/4
+ematrLv1   = ((vwap+lot)/vwap  - 1)*100
+ematrLvN1  = ((vwap-lot)/vwap  - 1)*100
+ematrLv2   = ((vwap+lot*2)/vwap- 1)*100
+ematrLvN2  = ((vwap-lot*2)/vwap- 1)*100
+//
+ematrPlot1  = plot(ematrLv1,  title="above", color = color.new(#000000,0), style=plot.style_line, linewidth = 1)
+ematrPlotN1 = plot(ematrLvN1, title="below", color = color.new(#000000,0), style=plot.style_line, linewidth = 1)
+ematrPlot2  = plot(ematrLv2, title="above2",color = color.new(#000000,0), style=plot.style_line, linewidth = 1)
+ematrPlotN2 = plot(ematrLvN2,title="below2",color = color.new(#000000,0), style=plot.style_line, linewidth = 1)
+fill(ematrPlot1,ematrPlotN1, color = color.new(#000000,30))
+fill(ematrPlot2,ematrPlotN2, color = color.new(#000000,60))

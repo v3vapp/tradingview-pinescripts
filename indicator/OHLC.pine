@@ -1,0 +1,75 @@
+//@version=4
+study("OHLC","OHLC",true,precision=2)
+
+navy  = color.new(color.navy, 100)
+black = #000000
+lime  = color.new(#5aff19,0)
+tlime = color.new(#5aff19,90)
+red   = color.new(#ff0000,0)
+yel   = color.yellow
+white = color.new(color.white,0)
+nc= color.new(color.white,100)
+blue   = color.blue
+m1 = (timeframe.period=="1")
+m3 = (timeframe.period=="3")
+m5 = (timeframe.period=="5")
+m15 = (timeframe.period=="15")
+m30 = (timeframe.period=="60")
+miniframe = (m1 or m3 or m5 or m15 or m30)
+f_noRepaint(res, src)  => security(syminfo.tickerid, res, src[barstate.isrealtime ? 1:0])
+f_realtime(src)                     => security(syminfo.tickerid, "D", src[barstate.isrealtime ? 1:0])
+
+onoff_sh   = input(true,  " S高 表示 ")
+onoff_sl   = input(true,  " S安 表示 ")
+onoff_do   = input(true,   " 日中 始値 表示 ")
+onoff_dh   = input(false,  " 日中 高値 表示 ")
+onoff_dl   = input(false,  " 日中 安値 表示 ")
+onoff_yh   = input(true,   " 前日 高値 表示 ")
+onoff_yl   = input(true,   " 前日 安値 表示 ")
+onoff_yo   = input(true,  " 前日 始値 表示 ")
+onoff_yc   = input(true,   " 前日 終値 表示 ")
+onoff_yyc  = input(false,  " 一昨日 終値 表示 ")
+onoff_VWAPlast  = input(true,  " 一昨日 終値 表示 ")
+
+
+
+do  = security(syminfo.tickerid, "D", open, lookahead=barmerge.lookahead_on)
+dh  = security(syminfo.tickerid, "D", high, lookahead=barmerge.lookahead_on)
+dl  = security(syminfo.tickerid, "D", low,  lookahead=barmerge.lookahead_on)
+vl = f_noRepaint("D", vwap)
+c   = f_noRepaint( "D", close)
+yyc = f_noRepaint( "D", close[1])
+yh  = f_noRepaint( "D", high)
+yl  = f_noRepaint( "D", low)
+yo  = f_noRepaint( "D", open[1])
+
+
+plotDot = plot.style_circles
+plotStep = plot.style_stepline
+plotLine = plot.style_linebr
+
+below = 0.975
+above = 1.025
+
+nearC  = c*below  < close and close < c*above 
+nearDO = yo*below < close and close < yo*above 
+nearDH = dh*below < close and close < dh*above 
+nearDL = dl*below < close and close < dl*above 
+nearYH = yh*below < close and close < yh*above 
+nearYL = yl*below < close and close < yl*above 
+nearYYC = yyc*below < close and close < yyc*above 
+nearYO = yo*below < close and close < yo*above 
+nearVL = vl*below < close and close < vl*above 
+
+//
+plot_yc  = plot(miniframe  and onoff_yc and nearC ? c   : na, "前日 終値",   style=plotDot,  color=color.new(color.purple,0))
+plot_do  = plot(miniframe  and onoff_do  and nearDO ? do  : na, "日中 始値",   style=plotDot,  color=color.new(color.orange,0))
+plot_dh  = plot(onoff_dh and miniframe   and nearDH ? dh  : na, "日中 高値",   style=plot.style_cross,  color=color.new(color.yellow,30),linewidth=2)
+plot_dl  = plot(onoff_dl and miniframe   and nearDL ? dl  : na, "日中 安値",   style=plot.style_cross,  color=color.new(color.yellow,30),linewidth=2)
+plot_yh  = plot(onoff_yh and miniframe and nearYH   ? yh  : na, "前日 高値",   style=plotDot,  color=#ff0000)
+plot_yl  = plot(onoff_yl and miniframe  and nearYL  ? yl  : na, "前日 安値",   style=plotDot,  color=color.new(color.aqua,0))
+plot_yyc = plot(onoff_yyc and miniframe  and nearYYC ? yyc : na, "一昨日 終値", style=plotDot,  color=color.new(color.purple,50))
+plot_yo  = plot(onoff_yo and miniframe  and nearYO  ? yo   : na, "前日 始値",   style=plotDot,  color=color.new(color.orange,50))
+plot_vl  = plot(onoff_VWAPlast and miniframe and nearVL ?vl :na , "VWAP 昨日Y",style=plotDot, color=color.green)
+
+

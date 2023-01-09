@@ -1,0 +1,95 @@
+//@version=5
+
+strategy(title="EMA strategy", overlay=true,pyramiding=1,calc_on_every_tick = false)
+
+//////////////////////////// ATR //////////////////////////////////////////////
+
+ATR    = request.security(syminfo.ticker,"D",ta.atr(10),  lookahead=barmerge.lookahead_on)
+ATRpct = math.round(ATR/close*100,1)
+
+//////////////////////////// BB ///////////////////////////////////////////////
+
+A_len = input(720,"A")
+B_len = input(1440,"B")
+
+X_str = "1"
+X_int = 1
+X_A_bars = A_len/X_int
+X_B_bars = B_len/X_int
+
+Y_str = "3"
+Y_int = 3
+Y_A_bars = A_len/Y_int
+Y_B_bars = B_len/Y_int
+
+Z_str = "5"
+Z_int = 5
+Z_A_bars = A_len/Z_int
+Z_B_bars = B_len/Z_int
+
+
+A =  
+ timeframe.period==X_str?ta.vwma(hlc3, X_A_bars):
+ timeframe.period==Y_str?ta.vwma(hlc3, Y_A_bars):
+ timeframe.period==Z_str?ta.vwma(hlc3, Z_A_bars):
+ na
+ 
+B  =  
+ timeframe.period==X_str?ta.vwma(hlc3, X_B_bars):
+ timeframe.period==Y_str?ta.vwma(hlc3, Y_B_bars):
+ timeframe.period==Z_str?ta.vwma(hlc3, Z_B_bars):
+ na
+
+// C  =  
+//  timeframe.period==X?3*ta.vwma(hlc3, X_bars):
+//  timeframe.period==Y?3*ta.vwma(hlc3, Y_bars):
+//  timeframe.period==Z?3*ta.vwma(hlc3, Z_bars):
+//  na
+
+// upper2 = A + B
+// upper3 = A + C
+// lower2 = A - B
+// lower3 = A - C
+
+//////////////////////////// Plots ////////////////////////////////////////////
+
+white = color.new(color.white,50)
+blue  = color.new(color.blue,90)
+red   = color.new(color.red,90)
+
+p_A = plot(A, "A", white)
+p_B = plot(B, "B", white)
+
+c_long  =  A>B
+c_short =  B>A
+
+fill(p_A,p_B,c_long?blue:c_short?red:na)
+
+/////////////////////////////  Conditions /////////////////////////////////////
+
+strategy.entry("long",  strategy.long,  when = c_long)
+//strategy.entry("short", strategy.short, when = c_short)
+
+strategy.exit("long", when = c_short, profit = 5 )
+
+
+
+
+//strategy.eventrades
+//取引期間全体に対する損益分岐点取引の数
+
+//stategy変数　↑　でテーブルを作る
+//table.new()
+
+
+//strategy.entryで理想のトレードを完結させる
+
+// ①　VWAP下落率に応じてエントリー。
+// ②　６時間線でショート。
+// ③　１２時間線でもショート。
+// ④　２４時間線でもショート。
+// ⑤　EMA５日線でもショート。
+
+
+
+

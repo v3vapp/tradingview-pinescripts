@@ -1,0 +1,141 @@
+//@version=5
+
+strategy(
+     "ReverseShort_v220619", 
+     overlay            = true, 
+     precision          = 3, 
+     pyramiding         = 99,
+     calc_on_every_tick = false,
+     use_bar_magnifier  = true,
+     max_bars_back      = 5000,
+     initial_capital    = 1000,
+     default_qty_type   = strategy.percent_of_equity, 
+     default_qty_value  = 12500, 
+     currency           = "USD",
+     commission_type    = strategy.commission.percent,
+     commission_value   = 0.04, 
+     margin_long        = 0, 
+     margin_short       = 0) 
+
+i_T     = input.float(50, "(Prof) T Entry /ATR%") 
+i_L     = input.float(50, "(Loss) L Entry /ATR%") 
+i_Slow  = input.int(7,  "Slow /D") 
+i_CORE  = input.int(12, "CORE /hour")
+i_BAND  = input.int(38, "A /ATR %") 
+
+i_ATR   = 7
+
+
+//#################################################################################
+//##############################     Set Up    ####################################
+//#################################################################################
+
+
+i_V     = 38 //input.float(50, "V /ATR %") 
+//i_Fast  = 1 //input.int(25, "Fast /D")
+i_entrytimer   = 30
+i_closedtimer = 30
+
+// Open Trades -----------------------------------------------------------------------
+
+OpenTrades_0 = strategy.opentrades == 0
+OpenTrades_1 = strategy.opentrades == 1
+OpenTrades_2 = strategy.opentrades == 2
+OpenTrades_3 = strategy.opentrades == 3
+
+positionLong    = strategy.opentrades.size(0) > 0
+positionShort   = strategy.opentrades.size(0) < 0
+
+WB          = strategy.initial_capital + strategy.netprofit
+MoneyOk     = WB > 350
+Single_ES   = WB/close                                                          
+
+EP  = strategy.opentrades.entry_price(strategy.opentrades - 1)
+AEP = strategy.position_avg_price
+
+// Time Control -----------------------------------------------------------------------
+
+tf = timeframe.isminutes?timeframe.multiplier:timeframe.isseconds?(timeframe.multiplier/60):na
+hour_1 = 60/tf
+entrytimer      = strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + (i_entrytimer/tf) < bar_index
+closedtimer     = strategy.closedtrades > 0 ? strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) + (i_closedtimer/tf) < bar_index : close > 0
+
+// Price Action -----------------------------------------------------------------------
+
+slow = request.security(syminfo.ticker,"10",ta.ema(close, i_Slow*24*6),lookahead = barmerge.lookahead_on)
+fast = close// request.security(syminfo.ticker,"10",ta.ema(close, i_Fast*24*3),lookahead = barmerge.lookahead_on)
+
+bull = fast > slow
+bear = fast < slow
+
+ATR     = request.security(syminfo.tickerid,'D',ta.ema(ta.tr,i_ATR), lookahead=barmerge.lookahead_on)
+ATRlot  = ATR*0.01
+ATRpct  = (ATR/close)
+
+core   =  request.security(syminfo.tickerid,'1',ta.ema(close, i_CORE*60), lookahead=barmerge.lookahead_on)
+A      = core+(ATR*(i_BAND/100))
+V      = core-(ATR*(i_V/100))
+
+// Trigger --------------------------------------------------------------------------
+
+xOver_core  = ta.crossover(close, core)    
+xUnder_core = ta.crossunder(close, core)
+Over_core   = close > core                                                     
+Under_core  = close < core
+
+xOver_A     = ta.crossover(close, A)
+xUnder_A    = ta.crossunder(close, A)
+Over_A      = close > A
+Under_A     = close < A
+
+xOver_V     = ta.crossover(close, V)
+xUnder_V    = ta.crossunder(close, V)
+Over_V      = close > V
+Under_V     = close < V
+
+BreakUp_A   = xOver_A[1] and Over_A 
+BreakDown_V = xUnder_V[1] and Under_V
+
+dip_V = close < V
+dip_A = close > A
+
+Dipped_V =   dip_V[3] or dip_V[4] or dip_V[5] or dip_V[6] or dip_V[7] or dip_V[8] or dip_V[9] or dip_V[10]
+Dipped_A =   dip_A[3] or dip_A[4] or dip_A[5] or dip_A[6] or dip_A[7] or dip_A[8] or dip_A[9] or dip_A[10]
+
+T       = EP + (ATR*(i_T/100))
+L       = EP - (ATR*(i_L/100))
+xT      = close > T 
+xL      = close < L
+
+
+//#########################   BEAR Reverse Short   ################################
+
+entry = OpenTrades_0 and xUnder_A and bear and MoneyOk
+strategy.entry("Reverse Short", strategy.short, Single_ES, when = entry)
+
+exit = positionShort and (xT or xL)
+strategy.close_all(exit, "Exit Reverse Short")
+    
+if entry
+    alert('{"type":"Entry","symbol":"{{ticker}}","side":"{{strategy.order.action}}","leverage":"1"}', alert.freq_once_per_bar)
+if exit
+    alert('{"type":"Exit","symbol":"{{ticker}}","side":"{{strategy.order.action}}","leverage":"1"}', alert.freq_once_per_bar)
+    
+//##############################   Indicator   ####################################
+
+p_T         = plot( T ,     "T", color.new(color.blue,0),   style=plot.style_cross, display=display.all)
+p_L         = plot( L ,     "L", color.new(color.red,0),    style=plot.style_cross, display=display.all)
+
+p_AEP       = plot(AEP, "AveEP", color.new(color.yellow,0), style=plot.style_cross, display=display.all)
+p_core      = plot(core, "CORE", color.new(color.lime,0),       display=display.all)
+p_A         = plot(A,       "A", color.new(color.aqua,0),       display=display.all)
+p_V         = plot(V,       "V", color.new(color.red,0),        display=display.all)
+p_fast      = plot(fast, "fast", color.new(color.gray,20),      display=display.all)
+p_slow      = plot(slow, "slow", color.new(color.gray,20), linewidth=2, display=display.all)
+
+fill(p_fast, p_slow, color = bull ? color.new(color.blue,90) : color.new(color.red,90), title= "fill plots")
+
+
+
+
+

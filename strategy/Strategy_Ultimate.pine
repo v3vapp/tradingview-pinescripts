@@ -1,0 +1,364 @@
+//@version=5
+
+strategy(
+     "(Strategy)Ultimate ", 
+     overlay            = true, 
+     precision          = 3, 
+     pyramiding         = 1,
+     calc_on_every_tick = true,
+     max_bars_back      = 5000,
+     initial_capital    = 1000,
+     default_qty_type   = strategy.percent_of_equity, 
+     default_qty_value  = 12500, 
+     currency           = "USD",
+     commission_type    = strategy.commission.percent,
+     commission_value   = 0.00, 
+     margin_long        = 0, 
+     margin_short       = 0) 
+
+tf = timeframe.multiplier
+
+//////  ATR //////
+
+ATR     = request.security(syminfo.tickerid,'D',ta.atr(10),lookahead=barmerge.lookahead_on)
+ATRlot  = ATR*0.01
+ATRpct  = (ATR/close)*100
+
+//////  OVERHEAT //////
+
+EMA5  = request.security(syminfo.tickerid,'15',ta.ema(hlc3, 5*24*4) , lookahead=barmerge.lookahead_on)
+EMA10 = request.security(syminfo.tickerid,'15',ta.ema(hlc3, 10*24*4) , lookahead=barmerge.lookahead_on)
+EMA25 = request.security(syminfo.tickerid,'15',ta.ema(hlc3, 25*24*4) , lookahead=barmerge.lookahead_on)
+EMA50 = request.security(syminfo.tickerid,'15',ta.ema(hlc3, 50*24*4) , lookahead=barmerge.lookahead_on)
+
+DivEMA5  = ((close - EMA5)/close)*100
+DivEMA10 = ((close - EMA10)/close)*100
+DivEMA25 = ((close - EMA25)/close)*100
+DivEMA50 = ((close - EMA50)/close)*100
+
+overheat = DivEMA5>10 or DivEMA10>10 or DivEMA25>10 or DivEMA50>10
+
+//////  OPENORDERS //////
+
+opentrades_0 = strategy.opentrades == 0
+opentrades_1 = strategy.opentrades == 1
+opentrades_2 = strategy.opentrades == 2
+opentrades_3 = strategy.opentrades == 3
+opentrades_4 = strategy.opentrades == 4
+
+//////  SENSOR //////
+
+i_MA_BASE = input.int(180,"BASE",step=10)
+BASE   = ta.vwma(hlc3, i_MA_BASE/tf)
+
+core = BASE 
+
+// xO_core = ta.crossover(close , core )
+// xU_core = ta.crossunder(close , core )
+
+// dip_V     = close < core
+// takeoff_V = close > core
+
+// sensor_V = takeoff_V and takeoff_V[1]
+//          and (xO_core[2] or xO_core[3] or xO_core[4] or xO_core[5])
+//          and dip_V[20] and dip_V[25] and dip_V[30] and dip_V[35] and dip_V[40]
+   
+
+
+//////  TIMER  //////
+
+
+i_timer  = input.int(6,  "Nanpin timer /Hour",  step=2)
+
+
+
+barcount_1h = 60/tf
+
+countdown = strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + (i_timer*barcount_1h)
+
+timeup = countdown < bar_index
+
+i_cooldown = input.int(6,"cooldown /Hour",step=2)
+
+cooldown = strategy.closedtrades >0 ?strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) + (i_cooldown*20)  < bar_index : close > 0
+
+
+//////  DOTEN  //////
+
+weak = strategy.opentrades.profit(0) < 0
+
+doten = timeup and weak
+
+
+//////  QUONTITY  ////// 
+
+i_ROA     = input.int(10,  "Return Of Asset /%",  step=2)
+ROA         = i_ROA/100
+
+i_Target  = input.int(200,  "Target ATR /%",  step=2)
+Target      = i_Target/100
+
+TargetRange = ATR*Target
+
+WB          = strategy.initial_capital + strategy.netprofit
+balance     = WB > 200
+
+LONG_ROA_Profit = WB*ROA  
+LONG_ROA_Loss   = LONG_ROA_Profit*1
+
+entrySize   = LONG_ROA_Profit/TargetRange
+//entrySize   = WB/close 
+
+
+
+//////  ASSET RATIO  ////// 
+
+CurrentLeverage = (entrySize*close)/WB
+
+//////  LOT  ////// 
+
+entry_price = strategy.opentrades.entry_price(0)
+lot = WB/entry_price
+
+//////  BAND  //////
+
+band_A = core+(ATRlot*30)
+band_V = core-(ATRlot*30)
+
+
+
+//////  ENTRY ORDERS  ////// 
+
+// trigger_long = sensor_V and balance and cooldown and (opentrades_0 or timeup)
+// trigger_short = opentrades_1 and doten
+
+
+
+//////  LONG ORDERS  ////// 
+
+LONG_cond_A = ta.crossover(close,band_A)
+
+LONG_cond_B = close > band_A
+
+LONG_cond_C = LONG_cond_B and  LONG_cond_B[1] and LONG_cond_B[2] and LONG_cond_B[3] and LONG_cond_A[4]
+
+LONG_cond_D = close < band_A
+
+LONG_cond_E = LONG_cond_D[10] and LONG_cond_D[20] and LONG_cond_D[30] 
+
+LONG_trigger = LONG_cond_C  and  LONG_cond_E
+
+
+strategy.entry("LONG", strategy.long, when = LONG_trigger, qty = entrySize, alert_message = "test message")
+
+//+++++++++++++++++
+
+LONG_position = strategy.position_size > 0 
+
+
+
+LONG_Profit = LONG_ROA_Profit/lot
+LONG_Loss   = LONG_ROA_Loss/lot
+
+LONG_limit_Profit = entry_price+TargetRange
+LONG_limit_Loss   = entry_price-LONG_Loss
+
+//-----------------
+
+xO_LONG_limit_Profit = close > LONG_limit_Profit
+xU_LONG_limit_Loss   = ta.crossunder(close , core)
+
+LONG_TP_triger = LONG_position and xO_LONG_limit_Profit 
+LONG_SL_triger = LONG_position and xU_LONG_limit_Loss 
+
+
+strategy.close_all(when = LONG_TP_triger , comment = "LONG OOOOO")
+strategy.close_all(when = LONG_SL_triger, comment = "LONG XXXXX")
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+//////  SHORT ORDERS  ////// 
+
+SHORT_trigger = ta.crossunder(close,band_V)
+
+//++++++++++++++++
+
+SHORT_position = strategy.position_size < 0 
+
+SHORT_ROA_Profit = WB*ROA  
+SHORT_ROA_Loss   = SHORT_ROA_Profit
+
+SHORT_Profit = SHORT_ROA_Profit/lot
+SHORT_Loss   = SHORT_ROA_Loss/lot
+
+SHORT_limit_Profit = entry_price - SHORT_Profit
+SHORT_limit_Loss   = entry_price + SHORT_Loss
+
+//-----------------
+
+xU_SHORT_limit_Profit = ta.crossunder(close , SHORT_limit_Profit)
+xO_SHORT_limit_Loss   = ta.crossover(close , SHORT_limit_Loss)
+
+SHORT_TP_triger = SHORT_position and xU_SHORT_limit_Profit 
+SHORT_SL_triger = SHORT_position and xO_SHORT_limit_Loss
+
+
+// strategy.entry("SHORT", strategy.short, when = SHORT_trigger, qty = entrySize, alert_message = "test message")
+// strategy.close_all(when = SHORT_TP_triger , comment = "SHORT OOOOO")
+// strategy.close_all(when = SHORT_SL_triger, comment = "SHORT XXXXX")
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+//%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+//////  MarginCall  //////
+i_cum    = input.float(10.0, "MaintenanceAmount (USDT)") //depends on Token Pair
+i_MMR    = input.float(1.0, "MaintenanceMargin Rate (%)")
+EP       = strategy.position_avg_price
+position = strategy.position_size
+NotionalValue = EP*position
+cum     = i_cum
+side    = strategy.position_size > 0 ? 1 :-1
+MMR     = i_MMR/100 
+TMM     = 0
+UNPL    = 0
+LiquidPrice = (WB-TMM+UNPL+cum-side*position*EP)/(position*MMR-side*position)
+anker_MGC  = low<LiquidPrice
+triger_MGC = anker_MGC
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// strategy.close_all( when=triger_MGC, comment = "#### DEAD ###")
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+
+//////  PLOT  //////
+
+// Remote Binacne
+plot(ROA, "x_ROA #1",       display = display.none)
+plot(ATR, "x_ATR #2",       display = display.none)
+plot(Target, "x_Target #3", display = display.none)
+
+
+// AveEP
+p_AveEP = plot(strategy.position_avg_price, "x", color.new(color.yellow,0), style=plot.style_linebr)
+
+p_Profit_LONG = plot(LONG_position ? LONG_limit_Profit:na,  "p_TP_LONG", color.new(color.aqua,0), style=plot.style_linebr)
+//p_Loss_LONG   = plot(LONG_position ? SHORT_limit_Profit:na, "p_Loss_LONG", color.new(color.red,0), style=plot.style_linebr)
+
+p_Profit_SHORT = plot(SHORT_position ? LONG_limit_Loss:na,  "p_TP_SHORT", color.new(color.aqua,0), style=plot.style_linebr)
+//p_Loss_SHORT   = plot(SHORT_position ? SHORT_limit_Loss:na, "p_Loss_SHORT", color.new(color.red,0), style=plot.style_linebr)
+
+
+// MarginCall
+plot(strategy.opentrades<0?na:LiquidPrice, "You Are Dead", color.new(#ff0000,30), style=plot.style_linebr, linewidth =1) //show oprnopsition is more than 1
+
+// SENSOR
+p_core = plot(core, "core", color.new(color.white,20), linewidth=1)
+//p_EMA5 = plot(EMA5, "EMA5",  color.blue, linewidth=1)
+
+// BAND
+p_A = plot(band_A, "A", color.new(color.white,90), linewidth=1)
+p_V = plot(band_V, "V", color.new(color.white,90), linewidth=1)
+fill(p_A,p_V,color.new(color.white,90))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//////  BACKGROUND COLOR //////
+
+bgc = triger_MGC==true ? color.new(#ff0000,30) : na
+bgcolor(bgc)
+
+//////  TABLE  //////
+
+var table TableX = table.new(position.bottom_right, 100, 100)
+table.cell(TableX,0,5,  "ROA" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,5,  str.tostring(i_ROA),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,0,7,  "Taret" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,7,  str.tostring(i_Target),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,0,20,  "tf" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,20,  str.tostring(tf),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+var table TableA = table.new(position.bottom_left, 10, 20)
+table.cell(TableA,0,0, "asset", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,1, "equity", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,3, "profit:loss ", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,5, "max_drawdown", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,8, "win:lose ", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,0, str.tostring(math.round(WB,0)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,1, str.tostring(math.round(strategy.equity,1)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,3, str.tostring(math.round(strategy.grossprofit,0))+ " vs "+ str.tostring(math.round(strategy.grossloss,0))+
+ " ("+str.tostring(math.round(strategy.netprofit,0))+ ")", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,5, str.tostring(math.round(strategy.max_drawdown,1)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,8, str.tostring(math.round(strategy.wintrades,1))+ " vs "+ str.tostring(math.round(strategy.losstrades,1))
+ + " ("+str.tostring(math.round(strategy.closedtrades,1))+ ")", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+
+var table TableB = table.new(position.top_center, 100, 100)
+table.cell(TableB,0,0, "", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableB,1,0, str.tostring(math.round((bar_index/barcount_1h)/24,1))+" days", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+
+var table T = table.new(position.top_right, 100, 100)
+table.cell(T,0,0, "WB ", text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,0, str.tostring(math.round(WB,0)) + " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,2, "ATR ", text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,2, str.tostring(math.round(ATR,3)) + " " , text_color = color.new(#ffffff,0) , bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,4, "ATRpct ", text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,4, str.tostring(math.round(ATRpct,2)) + " " , text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) , text_halign=text.align_right)
+table.cell(T,0,7, " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,7, " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,50, "entrySize", text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,50, str.tostring(math.round(entrySize,2))+" x"  , text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+
+

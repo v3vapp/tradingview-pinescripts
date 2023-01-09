@@ -1,0 +1,119 @@
+//@version=5
+indicator('WAVE', 'WAVE', overlay=false)
+VolumeSlopeSrc = input(defval=close, title='Source')
+
+min1VolLen = input(5,"1min")
+min5VolLen = input(5,"5min")
+
+linreg0= timeframe.period=="1"?ta.linreg(VolumeSlopeSrc, min1VolLen, 0):timeframe.period=="5"?ta.linreg(VolumeSlopeSrc, min5VolLen, 0):ta.linreg(VolumeSlopeSrc, 10, 0)
+linreg1= timeframe.period=="1"?ta.linreg(VolumeSlopeSrc, min1VolLen, 1):timeframe.period=="5"?ta.linreg(VolumeSlopeSrc, min5VolLen, 1):ta.linreg(VolumeSlopeSrc, 10, 1)
+
+slope_price = linreg0 - linreg1
+
+refbarVol=timeframe.period=="1"?min1VolLen:timeframe.period=="5"?min5VolLen:10
+
+vol = slope_price * refbarVol
+
+smaVolumeSlopeLen = bar_index > 4999 ? 4999 : bar_index < 4999 ? math.round(bar_index * 0.7) : 300
+smaVolumeSlopeLen := bar_index == 0 ? 4999 : smaVolumeSlopeLen
+
+volumeMax6h  = timeframe.period=="1"?ta.highest(vol,360):timeframe.period=="5"?ta.highest(vol,72):ta.highest(vol,24)
+volumeMin6h  = timeframe.period=="1"?ta.lowest(vol,360):timeframe.period=="5"?ta.lowest(vol,72):ta.lowest(vol,24)
+
+volumeSMAhigh = ta.sma(volumeMax6h, smaVolumeSlopeLen)
+volumeSMAlow  = ta.sma(volumeMin6h, smaVolumeSlopeLen)
+bar = slope_price * refbarVol
+
+
+x=100/volumeSMAhigh
+y=(100/(volumeSMAlow))*-1
+
+A = volumeSMAhigh*x
+B = volumeSMAlow*y
+C= bar*x
+
+plot(A, color=color.new(#ffffff, 0), title='High Div', style=plot.style_line, linewidth=1, display=display.all)
+plot(B, color=color.new(#ffffff, 0), title='Low Div', style=plot.style_line, linewidth=1, display=display.all)
+plot(C, color=slope_price > 0? color.new(color.aqua, 10) : slope_price < 0 ? color.new(#ff0000, 10) :  color.gray, style=plot.style_columns)
+
+//////////   BTC   ///////////////////////////////////////
+
+VolumeSlope_BTC = request.security("BINANCE:BTCUSDT", timeframe.period,close)
+
+linreg0_BTC= timeframe.period=="1"?ta.linreg(VolumeSlope_BTC, min1VolLen, 0):timeframe.period=="5"?ta.linreg(VolumeSlope_BTC, min5VolLen, 0):ta.linreg(VolumeSlope_BTC, 10, 0)
+linreg1_BTC= timeframe.period=="1"?ta.linreg(VolumeSlope_BTC, min1VolLen, 1):timeframe.period=="5"?ta.linreg(VolumeSlope_BTC, min5VolLen, 1):ta.linreg(VolumeSlope_BTC, 10, 1)
+
+slope_price_BTC = linreg0_BTC - linreg1_BTC
+
+refbarVol_BTC=timeframe.period=="1"?min1VolLen:timeframe.period=="5"?min5VolLen:10
+
+vol_BTC = slope_price_BTC * refbarVol_BTC
+
+smaVolumeSlopeLen_BTC = bar_index > 4999 ? 4999 : bar_index < 4999 ? math.round(bar_index * 0.7) : 300
+smaVolumeSlopeLen_BTC := bar_index == 0 ? 4999 : smaVolumeSlopeLen_BTC
+
+volumeMax6h_BTC  = timeframe.period=="1"?ta.highest(vol_BTC,360):timeframe.period=="5"?ta.highest(vol_BTC,72):ta.highest(vol_BTC,24)
+volumeMin6h_BTC  = timeframe.period=="1"?ta.lowest(vol_BTC,360):timeframe.period=="5"?ta.lowest(vol_BTC,72):ta.lowest(vol_BTC,24)
+
+
+volumeSMAhigh_BTC = ta.sma(volumeMax6h_BTC, smaVolumeSlopeLen_BTC)
+volumeSMAlow_BTC  = ta.sma(volumeMin6h_BTC, smaVolumeSlopeLen_BTC)
+bar_BTC = (slope_price_BTC * refbarVol_BTC)
+
+x_BTC=100/volumeSMAhigh_BTC
+y_BTC=(100/(volumeSMAlow_BTC))*-1
+
+A_BTC = volumeSMAhigh_BTC*x_BTC
+B_BTC = volumeSMAlow_BTC*y_BTC
+C_BTC= bar_BTC*x_BTC
+
+//plot(A_BTC, color=color.new(#ffffff, 0), title='High Diviation', style=plot.style_line, linewidth=1, display=display.all)
+//plot(B_BTC, color=color.new(#ffffff, 0), title='Low Diviation', style=plot.style_line, linewidth=1, display=display.all)
+plot(C_BTC, color=slope_price_BTC > 0? color.new(color.white, 0) : slope_price_BTC < 0 ? color.new(color.white, 0) :  color.gray, style=plot.style_stepline)
+
+gap = (C -C_BTC)+ 100
+
+//////////////  CC CAL  /////////////////////////////////////////////////////////////////////////
+
+CCsym = input.symbol(title="Symbol", defval="BINANCE:BTCUSDT", confirm=false)
+CCsrc = input(close, title="cc Source")
+CCres=timeframe.period
+CCovr = request.security(CCsym, CCres, CCsrc)
+corr=ta.correlation(CCsrc, CCovr, refbarVol)
+//plot(corr>0?na:corr, "Correlation", color=color.new(color.yellow,30), style=plot.style_histogram)
+
+//BGC///////////////////////////////////////////////////////////////////////////
+
+AccumColor  = color.new(color.blue,75)
+DistrColor  = color.new(color.red,75)
+strongColor  = color.new(color.lime,75)
+strongAccumColor  = color.new(color.aqua,50)
+strongDistrColor  = color.new(color.fuchsia,50)
+
+color ColorUnknown = na
+
+strong = corr < -0.5
+Accum = vol > volumeSMAhigh
+Distr = vol < volumeSMAlow
+strongAccum = strong and Accum
+strongDistr = strong and Distr
+
+VolumeBGC =  strongDistr?strongDistrColor: strongAccum?strongAccumColor: strong?strongColor: Distr?DistrColor: Accum?AccumColor: ColorUnknown
+
+bgcolor(VolumeBGC)
+
+//-------------------------------------------------------------------------------
+
+var table Table0 = table.new(position.top_center, 10, 10)
+table.cell(Table0, 0, 0, str.tostring(math.round((corr*100),0)), text_color = corr>-0.5?color.new(#ffffff,0):color.new(color.lime,0))
+var table Table1 = table.new(position.bottom_center, 10, 10)
+table.cell(Table1, 0, 0, str.tostring(math.round(gap,0)), text_color = gap>0?color.new(color.white,0):color.new(#ff0000,0))
+
+
+
+
+
+
+
+
+

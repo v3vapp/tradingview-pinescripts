@@ -1,0 +1,126 @@
+//@version=4
+study("INDEX OVERVIEW","INDEX VIEW",false,precision=2)
+
+onoffJP     = input(false,"LOOK AT JAPAN")
+onoffUS     = input(true,"LOOK AT US")
+onoffWORLD  = input(true,"LOOK AT THE WORLD(VT)")
+onoffEX     = input(true,"LOOK AT A RATE OF EXCHANGE")
+onoffECON  = input(true,"LOOK AT THE INDUSTRY")
+
+vwapTable2= table.new(position.top_center,10,10,bgcolor=color.new(#000000,51))
+f_noRepaint(ticker,res, src) => security(ticker, res, src[barstate.isrealtime ? 1:0])
+
+
+nikkeiD = f_noRepaint("TVC:NI225","D",close)
+nikkei5 = security("TVC:NI225",timeframe.period,close)
+nikkei = ((nikkei5/nikkeiD)- 1)*100 
+
+topixD = f_noRepaint("TSE:TOPIX","D",close)
+topix5 = security("TSE:TOPIX",timeframe.period,close)
+topix = ((topix5/topixD)- 1)*100 
+
+mosD = f_noRepaint("TSE:MOS","D",close)
+mos5 =security("TSE:MOS",timeframe.period,close)
+mos = ((mos5/mosD)- 1)*100 
+
+JASDAQD = f_noRepaint("TSE:0000","D",close)
+JASDAQ5 = security("TSE:0000",timeframe.period,close)
+JASDAQ = ((JASDAQ5/JASDAQD)- 1)*100 
+
+BDID = security("INDEX:BDI","D",close[1])
+BDI5 = security("INDEX:BDI","D",close)
+BDI = ((BDI5/BDID)- 1)*100 
+
+BTCD = f_noRepaint("CRYPTOCAP:BTC","D",close)
+BTC5 = f_noRepaint("CRYPTOCAP:BTC",timeframe.period,close)
+BTC = ((BTC5/BTCD)- 1)*100 
+
+SOXD =  f_noRepaint("NASDAQ:SOX","D",close)
+SOX5 = security("NASDAQ:SOX",timeframe.period,close)
+SOX = ((SOX5/SOXD)- 1)*100 
+
+DJUD = f_noRepaint("DJ:DJU","D",close)
+DJU5 = security("DJ:DJU",timeframe.period,close)
+DJU = ((DJU5/DJUD)- 1)*100 
+
+SP500D = f_noRepaint("AMEX:VOO","D",close)
+SP5005 = security("AMEX:VOO",timeframe.period,close)
+SP500 = ((SP5005/SP500D)- 1)*100 
+
+MSCID = f_noRepaint("CAPITALCOM:MSCI","D",close)
+MSCI5 = security("CAPITALCOM:MSCI",timeframe.period,close)
+MSCI = ((MSCI5/MSCID)- 1)*100 
+
+VTID = f_noRepaint("AMEX:VTI","D",close)
+VTI5 = security("AMEX:VTI",timeframe.period,close)
+VTI = ((VTI5/VTID)- 1)*100 
+
+VTD = f_noRepaint("AMEX:VT","D",close[1])
+VT5 = security("AMEX:VT",timeframe.period,close)
+VT = ((VT5/VTD)- 1)*100 
+
+USDJPYD = f_noRepaint("OANDA:USDJPY","D",close)
+USDJPY5 = security("OANDA:USDJPY",timeframe.period,close)
+USDJPY = ((USDJPY5/USDJPYD)- 1)*100 
+
+USDEURD = f_noRepaint("OANDA:EURUSD","D",close)
+USDEUR5 = security("OANDA:EURUSD",timeframe.period,close)
+USDEUR = ((USDEUR5/USDEURD)- 1)*100 
+
+jpStyle=plot.style_line
+usStyle=plot.style_line
+
+table.cell(vwapTable2,0,0,tostring(round(DJU,2))   + "/DOW",   text_color = color.blue,   text_halign = text.align_right)
+table.cell(vwapTable2,1,0,tostring(round(SP500,2)) + "/SP500", text_color = color.red,    text_halign = text.align_right)
+table.cell(vwapTable2,2,0,tostring(round(BTC,2))   + "/BTC",   text_color = color.yellow, text_halign = text.align_right)
+table.cell(vwapTable2,3,0,tostring(round(SOX,2))   + "/SOX",   text_color = color.green,  text_halign = text.align_right)
+table.cell(vwapTable2,4,0,tostring(round(BDI,2))   + "/BDI",   text_color = color.aqua,   text_halign = text.align_right)
+table.cell(vwapTable2,5,0,tostring(round(MSCI,2))  + "/MSCI",  text_color = color.orange, text_halign = text.align_right)
+table.cell(vwapTable2,6,0,tostring(round(VTI,2))   + "/VTI",   text_color = color.silver, text_halign = text.align_right)
+table.cell(vwapTable2,7,0,tostring(round(VT,2))    + "/VT",    text_color = color.olive,  text_halign = text.align_right)
+table.cell(vwapTable2,8,0,tostring(round(USDJPY,2))+ "/JPY",   text_color = color.navy,   text_halign = text.align_right)
+table.cell(vwapTable2,9,0,tostring(round(USDEUR,2))+ "/EUR",   text_color = color.navy,   text_halign = text.align_right)
+
+
+
+plot(onoffJP?round(nikkei,2):na,"NI225",color=color.new(color.blue,0),  style=jpStyle)
+plot(onoffJP?round(topix,2):na, "TOPIX",color=color.new(color.purple,0),style=jpStyle)
+plot(onoffJP?round(mos,2):na,   "MOS",  color=color.new(color.red,0),   style=jpStyle)
+plot(onoffJP?round(JASDAQ,2):na,"JDQ",  color=color.new(color.yellow,0),style=jpStyle)
+
+plot(onoffUS?round(DJU,2):na,   "DOW",  color=color.new(color.blue,0),  style=usStyle)
+plot(onoffUS?round(SP500,2):na, "SP500",color=color.new(color.purple,0),style=usStyle)
+plot(onoffUS?round(MSCI,2):na,  "MSCI", color=color.new(color.orange,0),style=usStyle)
+plot(onoffUS?round(VTI,2):na,   "VTI",  color=color.new(color.silver,0),style=usStyle)
+
+plot(onoffECON?round(SOX,2):na,   "SOX",  color=color.new(color.green,0), style=usStyle)
+plot(onoffECON?round(BDI,2):na,   "BDI",  color=color.new(color.aqua,0),  style=usStyle)
+
+plot(onoffWORLD?round(VT,2):na,    "VT",   color=color.new(color.olive,0), style=usStyle)
+
+plot(onoffEX?round(USDJPY,2):na,"JPY",color=color.new(color.navy,0),  style=jpStyle)
+plot(onoffEX?round(USDEUR,2):na,"EUR",color=color.new(color.fuchsia,0),  style=jpStyle)
+plot(onoffEX?round(BTC,2):na,   "BTC",  color=color.new(color.yellow,0),style=usStyle)
+
+//---------------
+
+
+// vwapTable= table.new(position.middle_right,10,10,bgcolor=color.new(#000000,100))
+// table.cell(vwapTable,0,0,tostring(round(nikkei,2)),text_color = color.blue,   text_halign = text.align_right)
+// table.cell(vwapTable,0,1,tostring(round(topix,2)), text_color = color.purple, text_halign = text.align_right)
+// table.cell(vwapTable,0,2,tostring(round(mos,2)),   text_color = color.red,    text_halign = text.align_right)
+// table.cell(vwapTable,0,3,tostring(round(JASDAQ)),  text_color = color.yellow, text_halign = text.align_right)
+
+
+plot2=plot(2,color=color.new(color.white,75),display=display.none)
+plotN2=plot(-2,color=color.new(color.white,75),display=display.none)
+plot3=plot(3,color=color.new(color.white,75),display=display.none)
+plotN3=plot(-3,color=color.new(color.white,75),display=display.none)
+plot(0,              "",         color=color.new(color.white,0),  linewidth=2)
+
+fill(plot2,plot3,color=color.new(color.white,85))
+fill(plotN2,plotN3,color=color.new(color.white,85))
+
+
+
+

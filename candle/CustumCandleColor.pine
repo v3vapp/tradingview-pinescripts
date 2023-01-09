@@ -1,0 +1,89 @@
+//@version=5
+
+// What is this?
+// Changes candle color depends on price actions.
+
+indicator("Candles",overlay=true)
+////////////////////////////////  ATR  ////////////////////////////////////////
+ATR     = request.security(syminfo.tickerid,'D',ta.atr(10),lookahead=barmerge.lookahead_on)
+ATRlot  = ATR*0.01
+ATRpct  = (ATR/close)*100
+size    = math.round(ta.sma(volume,10)*ta.sma(ohlc4,10)/10000000,1)
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   Basic Candles   //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//  Normal Candles  //
+
+overClose  = close >= close[1]
+underClose = close < close[1]
+white      = color.new(#ffffff, 0)
+black      = color.new(#000000, 0)
+plotcandle(overClose ? open : na, overClose ? high : na, overClose ? low : na, overClose ? close : na, 'BULL CANDLE', color=white, wickcolor=white, bordercolor=white)
+plotcandle(underClose ? open : na, underClose ? high : na, underClose ? low : na, underClose ? close : na, 'BEAR CANDLE', color=black, wickcolor=white, bordercolor=white)
+
+//  Candles Trend Detecter  //
+
+Up   = open > open[1] and close > close[1] and low > low[1] and high > high[1]
+Down = open < open[1] and close < close[1] and low < low[1] and high < high[1]
+blue = color.new(color.blue, 0)
+red  = color.new(#ff0000, 0)
+plotcandle(Up   ? open : na, Up   ? high : na, Up   ? low : na, Up   ? close : na, 'UP CANDLE',   color=blue, wickcolor=blue, bordercolor=blue)
+plotcandle(Down ? open : na, Down ? high : na, Down ? low : na, Down ? close : na, 'DOWN CANDLE', color=red,  wickcolor=red,  bordercolor=red)
+
+//  Big Candles Detecter  //
+CandleSizePct = ((high-low)/close)*100
+
+DetectPct     = ATRpct*0.1
+bigCandle     = CandleSizePct > DetectPct
+
+can_detect_huge  = ATRpct*0.2
+hugeCandle     = CandleSizePct > can_detect_huge
+
+CandleSize    = close < open ? CandleSizePct*-1 : CandleSizePct
+
+
+bullOpen  = close > open and bigCandle ? open  : na
+bullHigh  = close > open and bigCandle ? high  : na
+bullLow   = close > open and bigCandle ? low   : na
+bullClose = close > open and bigCandle ? close : na
+bearOpen  = close < open and bigCandle ? open  : na
+bearHigh  = close < open and bigCandle ? high  : na
+bearLow   = close < open and bigCandle ? low   : na
+bearClose = close < open and bigCandle ? close : na
+plotcandle(bullOpen,bullHigh,bullLow,bullClose, color=color.new(#00ced1,0), wickcolor=color.new(#00ced1,0), bordercolor=color.new(#00ced1,0))
+plotcandle(bearOpen,bearHigh,bearLow,bearClose, color=color.new(#FF00FF,0), wickcolor=color.new(#FF00FF,0), bordercolor=color.new(#FF00FF,0))
+
+bullOpenH = close > open and hugeCandle ? open  : na
+bullHighH  = close > open and hugeCandle ? high  : na
+bullLowH   = close > open and hugeCandle ? low   : na
+bullCloseH = close > open and hugeCandle ? close : na
+bearOpenH  = close < open and hugeCandle ? open  : na
+bearHighH  = close < open and hugeCandle ? high  : na
+bearLowH   = close < open and hugeCandle ? low   : na
+bearCloseH = close < open and hugeCandle ? close : na
+plotcandle(bullOpenH,bullHighH,bullLowH,bullCloseH, color=color.new(#00ced1,0), wickcolor=color.new(color.white,0), bordercolor=color.new(color.white,0))
+plotcandle(bearOpenH,bearHighH,bearLowH,bearCloseH, color=color.new(#FF00FF,0), wickcolor=color.new(color.white,0), bordercolor=color.new(color.white,0))
+
+bullOpenX = bullOpen and Up ? open  : na
+bullHighX  = bullHigh and Up ? high  : na
+bullLowX   = bullLow and Up ? low   : na
+bullCloseX = bullClose and Up ? close : na
+bearOpenX  = bearOpen and Down ? open  : na
+bearHighX  = bearHigh and Down ? high  : na
+bearLowX   = bearLow and Down ? low   : na
+bearCloseX = bearClose and Down ? close : na
+plotcandle(bullOpenX,bullHighX,bullLowX,bullCloseX, color=color.new(color.yellow,0), wickcolor=color.new(color.yellow,0), bordercolor=color.new(color.yellow,0))
+plotcandle(bearOpenX,bearHighX,bearLowX,bearCloseX, color=color.new(color.lime,0), wickcolor=color.new(color.lime,0), bordercolor=color.new(color.lime,0))
+
+// bullOpenXH  = bullOpenH and Up ? open  : na
+// bullHighXH  = bullHighH and Up ? high  : na
+// bullLowXH   = bullLowH and Up ? low   : na
+// bullCloseXH = bullCloseH and Up ? close : na
+// bearOpenXH  = bearOpenH and Down ? open  : na
+// bearHighXH  = bearHighH and Down ? high  : na
+// bearLowXH   = bearLowH and Down ? low   : na
+// bearCloseXH = bearCloseH and Down ? close : na
+// plotcandle(bullOpenXH,bullHighXH,bullLowXH,bullCloseXH, color=color.new(color.yellow,0), wickcolor=color.new(color.white,0), bordercolor=color.new(color.white,0))
+// plotcandle(bearOpenXH,bearHighXH,bearLowXH,bearCloseXH, color=color.new(color.lime,0), wickcolor=color.new(color.white,0), bordercolor=color.new(color.white,0))

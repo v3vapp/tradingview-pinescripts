@@ -1,0 +1,515 @@
+//@version=5
+
+strategy(
+    "Original Strategy", 
+    overlay            = true, 
+    precision          = 3, 
+    pyramiding         = 99,
+    calc_on_every_tick = false,
+    use_bar_magnifier  = true,
+    max_bars_back      = 5000,
+    initial_capital    = 1000,
+    default_qty_type   = strategy.percent_of_equity, 
+    default_qty_value  = 12500, 
+    currency           = "USD",
+    commission_type    = strategy.commission.percent,
+    commission_value   = 0.04, 
+    margin_long        = 0, 
+    margin_short       = 0) 
+
+i_T_MFL     = input.float(50, "[1] (Prof) T MFL /ATR%") 
+i_L_MFL     = input.float(50, "[2] (Loss) L MFL /ATR%") 
+
+i_T_WFS     = input.float(50, "[5] (Loss) T WFS /ATR%") 
+i_L_WFS     = input.float(50, "[6] (Prof) L WFS /ATR%") 
+
+i_T_MRL     = input.float(50, "[3] (Prof) T MRL /ATR%") 
+i_L_MRL     = input.float(50, "[4] (Loss) L MRL /ATR%") 
+
+i_T_WRS     = input.float(50, "[7] (Loss) T WRS /ATR%") 
+i_L_WRS     = input.float(50, "[8] (Prof) L WRS /ATR%") 
+
+//i_CORE  = input.int(3, "CORE /hour")
+i_A     = 38//input.float(50, "A /ATR %") 
+i_V     = 38//input.float(50, "V /ATR %") 
+i_Slow  = 25//input.int(1, "Slow /D") 
+i_Fast  = 1//input.int(25, "Fast /D")
+
+// Timeframe -------------
+tf           = timeframe.isminutes?timeframe.multiplier:timeframe.isseconds?(timeframe.multiplier/60):na
+//plot(60/tf)
+
+// Trend -------------------------------------------------------------------------
+slow = request.security(syminfo.ticker,"10",ta.ema(close, i_Slow*24*6),lookahead = barmerge.lookahead_on)
+fast = request.security(syminfo.ticker,"10",ta.ema(close, i_Fast*24*3),lookahead = barmerge.lookahead_on)
+
+bull = fast > slow
+bear = fast < slow
+
+// born_Bull = ta.crossover(fast,slow)
+// born_Bear = ta.crossunder(fast,slow)
+// change_Trend = born_Bull or born_Bear
+
+// Open Trades -----------------------------------------------------------------------
+OpenTrades_0 = strategy.opentrades == 0
+OpenTrades_1 = strategy.opentrades == 1
+OpenTrades_2 = strategy.opentrades == 2
+OpenTrades_3 = strategy.opentrades == 3
+
+positionLong        = strategy.opentrades.size(0) > 0
+positionShort       = strategy.opentrades.size(0) < 0
+
+// Entry Price -----------------------------------------------------------------------
+EP          = strategy.opentrades.entry_price(strategy.opentrades - 1)
+AEP         = strategy.position_avg_price
+
+// Wallet Balance --------------------------------------------------------------------
+WB          = strategy.initial_capital + strategy.netprofit
+bankrupt    = WB < 300
+
+// Lot --------------------------------------------------------------------------
+lot         = (strategy.position_size*AEP)/WB
+
+// Average True Range ----------------------------------------------------------------
+ATR         = request.security(syminfo.tickerid,'D',ta.ema(ta.tr,14), lookahead=barmerge.lookahead_on)
+ATRlot      = ATR*0.01
+ATRpct      = (ATR/close)
+
+// EMA ------------------------------------------------------------------------------
+// EMA5        = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 5*24),   lookahead=barmerge.lookahead_on)
+// EMA25       = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 25*24),  lookahead=barmerge.lookahead_on)
+// EMA100      = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 100*24), lookahead=barmerge.lookahead_on)
+// DivEMA5     = ((close - EMA5)/close)*100
+// DivEMA25    = ((close - EMA25)/close)*100
+// DivEMA100   = ((close - EMA100)/close)*100
+
+// OVERHEAT --------------------------------------------------------------------------
+//overheat    = DivEMA5>10
+
+// Calc 1 Hour -----------------------------------------------------------------------
+hour_1 = 60/tf
+
+// timer -----------------------------------------------------------------------------
+i_entrytimer    = 30
+entrytimer      = strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + (30/tf) < bar_index
+
+i_closedtimer   = 30
+closedtimer     = strategy.closedtrades > 0 ? strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) + (30/tf) < bar_index : close > 0
+
+// CTR --------------------------------------------------------------------------
+//i_CTR               = input.int(1, "CTR Ref Length /hour")
+
+// CTR         = ta.ema(ta.highest(high,((i_CTR*60)*60)/tf)-ta.lowest(low,(i_CTR*60)/tf),(1440/tf)*3)   //  (1440/tf) * X days
+// CTRlot      = CTR*0.01
+// CTRpct      = (CTR/close)*100
+
+// CTR_A       = ta.ema(ta.highest(high,(i_CTR*60)/tf)-ta.ema(hlc3,(i_CTR*60)/tf),(1440/tf)*3)
+// CTRlot_A    = CTR_A*0.01
+// CTRpct_A    = (CTR_A/close)*100
+
+// CTR_V       = ta.ema(ta.ema(hlc3,(i_CTR*60)/tf)-ta.lowest(low,(i_CTR*60)/tf),(1440/tf)*3)  
+// CTRlot_V    = CTR_V*0.01
+// CTRpct_V    = (CTR_V/close)*100
+
+// BAND ------------------------------------------------------------------------
+
+ema6h  = request.security(syminfo.tickerid,'1',ta.ema(close, 6*60), lookahead=barmerge.lookahead_on)
+ema12h = request.security(syminfo.tickerid,'1',ta.ema(close, 12*60), lookahead=barmerge.lookahead_on)
+ema24h = request.security(syminfo.tickerid,'1',ta.ema(close, 24*60), lookahead=barmerge.lookahead_on)
+
+core   = (ema6h + ema12h + ema24h)/3
+
+A      = core+(ATR*(i_A/100))
+V      = core-(ATR*(i_V/100))
+
+
+// Entry Size ------------------------------------------------------------------
+Single_ES   = WB/close                                                          
+
+// Movement --------------------------------------------------------------------------
+xOver_core  = ta.crossover(close, core)    
+xUnder_core = ta.crossunder(close, core)
+Over_core   = close > core                                                     
+Under_core  = close < core
+
+xOver_A     = ta.crossover(close, A)
+xUnder_A    = ta.crossunder(close, A)
+Over_A      = close > A
+Under_A     = close < A
+
+xOver_V     = ta.crossover(close, V)
+xUnder_V    = ta.crossunder(close, V)
+Over_V      = close > V
+Under_V     = close < V
+
+BreakUp_A   = xOver_A[1] and Over_A 
+BreakDown_V = xUnder_V[1] and Under_V
+
+dip_V = close < V
+dip_A = close > A
+
+//Dipped_V = dip_V[1] and dip_V[2] and dip_V[3] and dip_V[4] and dip_V[5] and dip_V[6] and dip_V[7] and dip_V[8] and dip_V[9] and dip_V[10]
+Dipped_V =   dip_V[3] or dip_V[4] or dip_V[5] or dip_V[6] or dip_V[7] or dip_V[8] or dip_V[9] or dip_V[10]
+
+//Dipped_A = dip_A[1] and dip_A[2] and dip_A[3] and dip_A[4] and dip_A[5] and dip_A[6] and dip_A[7] and dip_A[8] and dip_A[9] and dip_A[10]
+Dipped_A =   dip_A[3] or dip_A[4] or dip_A[5] or dip_A[6] or dip_A[7] or dip_A[8] or dip_A[9] or dip_A[10]
+
+// Exit Spot ------------------------------------------------------------------
+
+T_MFL       = EP + (ATR*(i_T_MFL/100))
+L_MFL       = EP - (ATR*(i_L_MFL/100))
+xT_MFL      = close > T_MFL 
+xL_MFL      = close < L_MFL
+
+T_WFS       = EP + (ATR*(i_T_WFS/100))
+L_WFS       = EP - (ATR*(i_L_WFS/100))
+xT_WFS      = close > T_WFS 
+xL_WFS      = close < L_WFS
+
+T_MRL       = EP + (ATR*(i_T_MRL/100))
+L_MRL       = EP - (ATR*(i_L_MRL/100))
+xT_MRL      = close > T_MRL 
+xL_MRL      = close < L_MRL
+
+T_WRS       = EP + (ATR*(i_T_WRS/100))
+L_WRS       = EP - (ATR*(i_L_WRS/100))
+xT_WRS      = close > T_WRS 
+xL_WRS      = close < L_WRS
+
+// //BULL Follow Long ----------------------------------------------------------------------
+
+// MFL = OpenTrades_0 and xOver_A and closedtimer and bull
+// exit_MFL = positionLong and (xT_MFL or xL_MFL) // and entrytimer
+
+// strategy.entry("M Follow Long", strategy.long, Single_ES, when = MFL,           alert_message = '{ "x_PT":{{plot_1}},"x_SL":{{plot_2}}, "x_side":"BUY", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+// strategy.close_all(exit_MFL, "Exit MFL")
+
+// // BEAR Follow Short --------------------------------------------------------------------
+
+// WFS = OpenTrades_0 and xUnder_V and closedtimer and bear
+// exit_WFS = positionShort and (xT_WFS or xL_WFS) // and entrytimer
+
+// strategy.entry("W Follow Short", strategy.short, Single_ES, when = WFS,         alert_message = '{ "x_PT":{{plot_1}},"x_SL":{{plot_2}}, "x_side":"BUY", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+// strategy.close_all(exit_WFS, "Exit WFS")
+
+//BULL Reverse Long ----------------------------------------------------------------------
+
+MRL = OpenTrades_0 and xOver_V and bull //and Dipped_V //and closedtimer
+exit_MRL = positionLong and (xT_MRL or xL_MRL) // and entrytimer
+
+strategy.entry("M Reverse Long", strategy.long, Single_ES, when = MRL,          alert_message = '{ "x_PT":{{plot_1}},"x_SL":{{plot_2}}, "x_side":"BUY", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+strategy.close_all(exit_MRL, "Exit MRL")
+
+//BEAR Reverse Short ----------------------------------------------------------------------
+
+WRS = OpenTrades_0 and xOver_A and bear //and Dipped_A //and closedtimer 
+exit_WRS = positionShort and (xT_WRS or xL_WRS) // and entrytimer
+
+strategy.entry("W Reverse Short", strategy.short, Single_ES, when = WRS,        alert_message = '{ "x_PT":{{plot_1}},"x_SL":{{plot_2}}, "x_side":"SELL", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+strategy.close_all(exit_WRS, "Exit WRS")
+
+
+// p_T         = plot( T , "T", color.new(color.blue,0), style=plot.style_cross, linewidth=1, display=all)
+// p_L         = plot( L , "L", color.new(color.red,0), style=plot.style_cross, linewidth=1, display=all)
+
+
+
+
+// BearReboundShort --------------------------------------------------------------------
+// SHORT_Follow        = bear and not bankrupt and OpenTrades_0 and BreakDown_V
+// SHORT_Close_Follow  = positionShort and xOver_V[1] and Over_V and entrytimer
+
+// strategy.entry("positionShort", strategy.short, Single_ES, when = SHORT_Follow , alert_message = "test")
+// strategy.close_all(SHORT_Close_Follow, "positionShort Closed", "test")
+
+// Bull Rebound ----------------------------------------------------------------------
+// SHORT_Rebound = bull and not bankrupt and OpenTrades_0 and BreakDown_V
+// SHORT_Close_Rebound = positionShort and xOver_V[1] and Over_V and entrytimer
+
+// strategy.entry("positionShort", strategy.short, Single_ES, when = SHORT_Rebound, alert_message = "test")
+// strategy.close_all(SHORT_Close_Rebound , "positionShort Closed", "test")
+
+
+
+
+
+
+
+
+
+//##################################################################################
+//##############################    [ ORDER ]   ####################################
+//##############################   Margin Call  ####################################
+//##################################################################################
+
+
+// onoff_MGC   = input.bool(true, " MarginCall ON/OFF")
+
+// i_cum       = input.float(10.0, "Maintenance Amount /$") //depends on Token Pair
+// i_MMR       = input.float(1.0, "Maintenance Margin Rate /%")
+
+// position    = strategy.position_size
+// // NotionalValue = AEP*position
+// cum         = i_cum
+// side        = strategy.position_size > 0 ? 1 :-1
+// MMR         = i_MMR/100 
+// TMM         = 0
+// UNPL        = 0
+// LP          = (WB-TMM+UNPL+cum-side*position*AEP)/(position*MMR-side*position) //LiquidPrice
+// MGC         = low < LP
+
+// if onoff_MGC
+//     strategy.close_all(when=MGC, comment = "(´×ω×`)",
+//      alert_message = "test message")
+
+
+
+
+//#################################################################################
+//##############################   INDICAROR   ####################################
+//#################################################################################
+
+
+// Plot --------------------------------------------------------------------------
+all         = display.all
+none        = display.none
+
+// p_ROA       = plot(ROA,     "x_ROA #1",     display=none)
+p_ATR       = plot(ATR,     "x_ATR #2",     display=none)
+
+
+p_AEP       = plot(AEP,     "Ave EP", color.new(color.yellow,0), style=plot.style_cross, display=all)
+
+p_core      = plot(core,    "CORE", color.new(color.lime,0),    linewidth=1, display=all)
+p_A         = plot(A,  "A",    color.new(color.aqua,0),    linewidth=1, display=all)
+p_V         = plot(V,  "V",    color.new(color.red,0),     linewidth=1, display=all)
+
+
+
+//p_MAG       = plot(OpenTrades_0 or OpenTrades_1 ? na : LP, "Liquid Price", color.new(#ff0000,30), style=plot.style_cross, linewidth=1, display=all)
+
+//p_EMA5      = plot(EMA5,    "EMA5",  color=color.new(color.aqua, 50),   linewidth=3, style=plot.style_stepline, display=all)
+//p_EMA25     = plot(EMA25,   "EMA25", color=color.new(color.yellow, 50), linewidth=3, style=plot.style_stepline, display=all)
+//p_EMA100    = plot(EMA100,  "EMA100",color=color.new(color.purple, 50), linewidth=3, style=plot.style_stepline, display=none)
+
+
+p_fast     = plot(fast,   "fast", color.new(color.gray,20),  linewidth=1, display=none)
+p_slow      = plot(slow,    "slow", color.new(color.gray,20),   linewidth=2, display=none)
+
+fill(p_fast, p_slow, color = bull ? color.new(color.blue,70) : color.new(color.red,70), title= "fill plots")
+
+
+
+
+// BackGround --------------------------------------------------------------------------
+//bgc         = MGC==true ? color.new(#ff0000,30) : na
+// bgc         = bull ? color.new(color.aqua,90) : color.new(#ff0000,90)
+// bgcolor(bgc)
+
+
+
+// // TABLE --------------------------------------------------------------------------
+right       = text.align_right
+left        = text.align_left
+white       = color.new(#ffffff,0)
+black       = color.new(#000000,0)
+
+// var table Table_TC = table.new(position.top_center, 100, 100)
+// table.cell(Table_TC,0,0, "", text_color = white,text_halign=left)
+// table.cell(Table_TC,1,0, str.tostring(math.round((bar_index/hour_1)/24,1))+" days", text_color = white,text_halign=left)
+
+var table Table_TR = table.new(position.top_right, 100, 100)
+// table.cell(Table_TR,0,0, "WB ", text_color=white, bgcolor=black, text_halign=right)
+// table.cell(Table_TR,1,0, str.tostring(math.round(WB,0))+"",text_color=white, bgcolor=black, text_halign=right)
+// table.cell(Table_TR,0,2, "CTRpct ", text_color=white, bgcolor=black, text_halign=right)
+// table.cell(Table_TR,1,2, str.tostring(math.round(CTRpct,2))+"", text_color=white, bgcolor=black, text_halign=right)
+table.cell(Table_TR,0,4, "ATRpct ", text_color=white, bgcolor=black, text_halign=right)
+table.cell(Table_TR,1,4, str.tostring(math.round(ATRpct,2))+"", text_color=white, bgcolor=black, text_halign=right)
+// table.cell(Table_TR,0,7, "", text_color=white, bgcolor=black, text_halign=right)
+// table.cell(Table_TR,1,7, "", text_color=white, bgcolor=black, text_halign=right)
+
+// var table Table_BL = table.new(position.bottom_left, 10, 20)
+// table.cell(Table_BL,0,0, "asset", text_color = white,text_halign=left)
+// table.cell(Table_BL,0,1, "equity", text_color = white,text_halign=left)
+// table.cell(Table_BL,0,3, "profit:loss ", text_color = white,text_halign=left)
+// table.cell(Table_BL,0,5, "max_drawdown", text_color = white,text_halign=left)
+// table.cell(Table_BL,0,8, "win:lose ", text_color = white,text_halign=left)
+// table.cell(Table_BL,1,0, str.tostring(math.round(WB,0)), text_color = white,text_halign=left)
+// table.cell(Table_BL,1,1, str.tostring(math.round(strategy.equity,1)), text_color = white,text_halign=left)
+// table.cell(Table_BL,1,3, str.tostring(math.round(strategy.grossprofit,0))+ " vs "
+//  +str.tostring(math.round(strategy.grossloss,0))+ " ("+str.tostring(math.round(strategy.netprofit,0))+ ")", text_color = white,text_halign=left)
+// table.cell(Table_BL,1,5, str.tostring(math.round(strategy.max_drawdown,1)), text_color = white,text_halign=left)
+// table.cell(Table_BL,1,8, str.tostring(math.round(strategy.wintrades,1))+ " vs "
+//  +str.tostring(math.round(strategy.losstrades,1)) + " ("+str.tostring(math.round(strategy.closedtrades,1))+ ")", text_color = white,text_halign=left)
+
+// var table Table_BC = table.new(position.bottom_center, 100, 100)
+// table.cell(Table_BC,0,0, "CTRpct", text_color = white,text_halign=left)
+// table.cell(Table_BC,1,0, str.tostring(math.round(CTRpct,3))+" %", text_color = white, text_halign=left)
+
+// var table Table_BR = table.new(position.bottom_right, 100, 100)
+// // table.cell(Table_BR,0,5,  "ROA" , text_color = white,text_halign=right)
+// // table.cell(Table_BR,1,5,  str.tostring(i_ROA),  text_color = white,text_halign=right)
+// // table.cell(Table_BR,0,7,  "Taret T" , text_color = white,text_halign=right)
+// // table.cell(Table_BR,1,7,  str.tostring(i_TarxT),  text_color = white,text_halign=right)
+// // table.cell(Table_BR,0,8,  "Taret L" , text_color = white,text_halign=right)
+// // table.cell(Table_BR,1,8,  str.tostring(i_TarxL),  text_color = white,text_halign=right)
+// table.cell(Table_BR,0,20,  "tf" , text_color = white,text_halign=right)
+// table.cell(Table_BR,1,20,  str.tostring(tf),  text_color = white,text_halign=right)
+
+
+
+
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+// VWMA --------------------------------------------------------------------------
+// ma1    = ta.vwma(hlc3, 60/tf)
+// ma2    = ta.vwma(hlc3, 120/tf)
+// ma3    = ta.vwma(hlc3, 180/tf)
+// ma6    = ta.vwma(hlc3, 360/tf)
+// ma12   = ta.vwma(hlc3, 720/tf)
+// ma24   = ta.vwma(hlc3, 1440/tf)
+
+// p_ma1  = plot(ma1, "ma1", color=color.new(color.blue,  0),     linewidth=1, display=none)
+// p_ma2  = plot(ma2, "ma2", color=color.new(color.aqua,  50),    linewidth=1, display=none)
+// p_ma3  = plot(ma3, "ma3", color=color.new(color.fuchsia,  50), linewidth=1, display=none)
+// p_ma6  = plot(ma6, "ma6", color=color.new(color.white,  0),    linewidth=1, display=none)
+// p_ma12 = plot(ma12,"ma12",color=color.new(color.white,  0),    linewidth=2, display=none)
+// p_ma24 = plot(ma24,"ma24",color=color.new(color.white,  50),   linewidth=3, display=none)
+
+
+
+// PLOpenTrades ATR --------------------------------------------------------------------------
+// plot(TR,"TR", display = none)
+// plot(ATR,"ATR", display = none)
+// plot(CTR,"CTR", display = none)
+
+// Downed --------------------------------------------------------------------------
+// lower = strategy.position_avg_price-(ATRlot*50)
+// down  = close < lower
+
+// nanipin --------------------------------------------------------------------------
+// pin1 = strategy.opentrades == 0  or strategy.opentrades  < 4
+// pin2 = strategy.opentrades >= 4  and strategy.opentrades < 8
+// pin3 = strategy.opentrades >= 8  and strategy.opentrades < 12
+// pin4 = strategy.opentrades >= 12 and strategy.opentrades < 16
+
+// True Range --------------------------------------------------------------------------
+// TR          = request.security(syminfo.tickerid,'D',ta.tr(1),lookahead=barmerge.lookahead_on)
+// TRlot       = TR*0.01
+// TRpct       = (TR/close)*100
+
+
+
+
+//$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+// Entry Size --------------------------------------------------------------------------
+// i_ROA           = input.int(10,     "ROA /%")
+// ROA         = i_ROA/100                                                         // Target ROA
+// ROA_Profit  = WB*ROA                                                            // Target Profit
+
+// ROA_ES      = ROA_Profit/TarxT                                               // ROA based Entry Size
+// Pyramid_ES  = OpenTrades_0 ? Single_ES*1 : OpenTrades_1 ? Single_ES*2: OpenTrades_2 ? Single_ES*4 : na 
+
+// PT/StopLoss Price -----------------------------------------------------------
+// i_TarxT      = input.int(100,    "Target T CTR /%")
+// i_TarxL      = input.int(100,    "Target L CTR /%")
+// TarxT    = CTR*(i_TarxT/100)                                              // Target Range by ROA
+// TarxL    = CTR*(i_TarxL/100) 
+// EP_T        = EP + TarxT                                                     // Exit Price
+// EP_L        = EP - TarxL
+    
+// // Rebound Pyramiding ---------------------------------------------------------
+
+// //-------
+// LONG_CPyramid = (ALCP and not bankrupt and OpenTrades_0 and BreakUp_A) 
+//                  or (ALF and not bankrupt and OpenTrades_1 and BreakUp_A and entrytimer)
+//                  or (ALF and not bankrupt and OpenTrades_2 and BreakUp_A and entrytimer)
+                 
+// LONG_Close_CPyramid = ALCP and positionShort and Under_A[1] and Under_A and entrytimer
+
+// strategy.entry("positionLong", strategy.long, Single_ES, when = LONG_CPyramid, alert_message = "test")
+// strategy.close_all(LONG_Close_CPyramid, "positionLong Closed", "test")
+
+// //-------
+// SHORT_CPyramid = (ASCP and not bankrupt and OpenTrades_0 and BreakDown_V) 
+//                  or (ASF and not bankrupt and OpenTrades_1 and BreakDown_V and entrytimer)
+//                  or (ASF and not bankrupt and OpenTrades_2 and BreakDown_V and entrytimer)
+                 
+// SHORT_Close_CPyramid = ASCP and positionShort and xOver_V[1] and Over_V and entrytimer
+
+// strategy.entry("positionShort", strategy.short, Single_ES, when = SHORT_CPyramid, alert_message = "test")
+// strategy.close_all(SHORT_Close_CPyramid, "positionShort Closed", "test")
+    
+    
+
+//##################################################################################
+//##############################    [ ORDER ]   ####################################
+//##############################      DOpenTradesEN     ####################################
+//##################################################################################
+
+
+// onoff_DOpenTradesEN = input.bool(false, "DOpenTradesEN ON/OFF")
+// i_MA_MOVE = input.int(10, "MOVE /min", step=2)
+// i_MA_BASE = input.int(100, "BASE /min", step=2)
+
+// MOVE   = ta.vwma(hlc3, i_MA_MOVE/tf)
+// BASE   = ta.vwma(hlc3, i_MA_BASE/tf)
+
+// DOpenTradesEN_Pyramid_ES = WB/close 
+
+// LONG_DOpenTradesEN_IN   = ta.crossover(MOVE, BASE)
+// SHORT_DOpenTradesEN_IN  = ta.crossunder(MOVE, BASE)
+// LONG_DOpenTradesEN_OUT  = ta.crossunder(close, MOVE)
+// SHORT_DOpenTradesEN_OUT = ta.crossover(close, MOVE)
+
+// if onoff_DOpenTradesEN
+//     strategy.entry("DOpenTradesEN positionLong IN ", strategy.short, qty = DOpenTradesEN_Pyramid_ES, when = LONG_DOpenTradesEN_IN)
+//     strategy.entry("DOpenTradesEN positionShort IN ", strategy.long, qty = DOpenTradesEN_Pyramid_ES, when = SHORT_DOpenTradesEN_IN)
+//     strategy.close_all(LONG_DOpenTradesEN_OUT ,"CLOSE DOpenTradesEN positionLong")
+//     strategy.close_all(SHORT_DOpenTradesEN_OUT ,"CLOSE DOpenTradesEN positionShort")
+
+
+
+
+//##################################################################################
+//##############################    [ ORDER ]   ####################################
+//##############################      SPREAD    ####################################
+//##################################################################################
+
+
+// onoff_SPREAD = input.bool(false, "SPREAD ON/OFF")
+// i_Loss_SPREAD = input.int(200, "SPREAD Losscut Multiplier /% ", step=2)
+
+// cond_opentrades = strategy.opentrades == 0 or strategy.opentrades < 4
+
+// SPREAD_ROA_Profit = WB*ROA  
+// SPREAD_ROA_Loss   = SPREAD_ROA_Profit*(i_Loss_SPREAD*0.01)
+
+// SPREAD_Pyramid_ES   = SPREAD_ROA_Profit/Target
+
+// LONG_SPREAD  = cond_vwma and not bankrupt and not overheat and cond_opentrades
+
+// if onoff_SPREAD
+//     strategy.order("1-1", strategy.long, when = LONG_SPREAD, qty = SPREAD_Pyramid_ES/4, alert_message = "test message")
+//     strategy.order("1-2", strategy.long, when = LONG_SPREAD, qty = SPREAD_Pyramid_ES/4, alert_message = "test message")
+//     strategy.order("1-3", strategy.long, when = LONG_SPREAD, qty = SPREAD_Pyramid_ES/4, alert_message = "test message")
+//     strategy.order("1-4", strategy.long, when = LONG_SPREAD, qty = SPREAD_Pyramid_ES/4, alert_message = "test message")
+
+// profitRangeLv1 = ATR*0.2   
+// profitRangeLv2 = ATR*0.3   
+// profitRangeLv3 = ATR*0.4   
+// profitRangeLv4 = ATR*0.5
+
+// if onoff_SPREAD
+//     strategy.exit("exit 1-1", "1-1", qty_percent = 100, profit = profitRangeLv1/syminfo.mintick, comment = "closed 1-1")
+//     strategy.exit("exit 1-2", "1-2", qty_percent = 100, profit = profitRangeLv2/syminfo.mintick, comment = "closed 1-2")
+//     strategy.exit("exit 1-3", "1-3", qty_percent = 100, profit = profitRangeLv3/syminfo.mintick, comment = "closed 1-3")
+//     strategy.exit("exit 1-4", "1-4", qty_percent = 100, profit = profitRangeLv4/syminfo.mintick, comment = "closed 1-4")
+
+
+// // Too Late --------------------------------------------------------------------------
+// late     = close - ta.lowest(low,30)
+// lockup      = ATR/1
+// tooLate     = late > lockup

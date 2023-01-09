@@ -1,0 +1,421 @@
+//@version=5
+indicator(title='Platelet Ver.2', shorttitle='Platelet V.2', overlay=true)
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////  Moving Avarage ///////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+ma1    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 60))
+ma2    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 120))
+ma3    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 180))
+ma4    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 240))
+ma5    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 300))
+ma6    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 360))
+ma12   = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 720))
+ma24   = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 1440))
+
+//  Div MA  //
+DivMA1   = ((close/ma1)*100)-100
+DivMA2   = ((close/ma2)*100)-100
+DivMA3   = ((close/ma3)*100)-100
+
+DivMA6   = ((close/ma6)*100)-100
+DivMA12  = ((close/ma12)*100)-100
+DivMA24  = ((close/ma24)*100)-100
+
+bullMA = ma6>ma12 and ma6>ma24 and ma12>ma24
+bearMA = ma6<ma12 and ma6<ma24 and ma12<ma24
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////  Exponential Moving Avarage ///////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+ema5     = request.security(syminfo.tickerid, '1440', ta.ema(close, 5),  lookahead=barmerge.lookahead_on)
+ema5cur  = request.security(syminfo.tickerid, '1440', ta.ema(close, 5),  lookahead=barmerge.lookahead_off)
+ema25    = request.security(syminfo.tickerid, '1440', ta.ema(close, 25), lookahead=barmerge.lookahead_on)
+ema25cur = request.security(syminfo.tickerid, '1440', ta.ema(close, 25), lookahead=barmerge.lookahead_off)
+ema50    = request.security(syminfo.tickerid, '1440', ta.ema(close, 50), lookahead=barmerge.lookahead_on)
+ema50cur = request.security(syminfo.tickerid, '1440', ta.ema(close, 50), lookahead=barmerge.lookahead_off)
+ema100    = request.security(syminfo.tickerid, '1440', ta.ema(close, 100), lookahead=barmerge.lookahead_on)
+ema100cur = request.security(syminfo.tickerid, '1440', ta.ema(close, 100), lookahead=barmerge.lookahead_off)
+ema200    = request.security(syminfo.tickerid, '1440', ta.ema(close, 200), lookahead=barmerge.lookahead_on)
+ema200cur = request.security(syminfo.tickerid, '1440', ta.ema(close, 200), lookahead=barmerge.lookahead_off)
+
+bullEMA = ema5>ema25 and ema25>ema50 and ema50>ema100 and ema100>ema200
+bullEMA5 = close>ema5
+bullEMA25 = close>ema25
+bullEMA50 = close>ema50
+bullEMA100 = close>ema100
+bullEMA200 = close>ema200
+
+bearEMA = ema5<ema25 and ema25<ema50 and ema50<ema100 and ema100<ema200
+bearEMA5 = close<ema5
+bearEMA25 = close<ema25
+bearEMA50 = close<ema50
+bearEMA100 = close<ema100
+bearEMA200 = close<ema200
+
+
+//  Div EMA  //
+
+float DivEMA5  = (close/ema5)*100
+float DivEMA25 = (close/ema25)*100
+float DivEMA50 = (close/ema50)*100
+float DivEMA100 = (close/ema100)*100
+float DivEMA200 = (close/ema200)*100
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////  Avarage True Range ///////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+ATR          = request.security(syminfo.tickerid,'D',ta.atr(7),lookahead=barmerge.lookahead_on)
+ATRpct       = (ATR/close)*100
+
+ATRtop6C     = ma6  + ATR * 0.5
+ATRtop12C    = ma12 + ATR * 0.5
+ATRtop24C    = ma24 + ATR * 0.5
+ATRtop6B     = ma6  + ATR * 0.75
+ATRtop12B    = ma12 + ATR * 0.75
+ATRtop24B    = ma24 + ATR * 0.75
+ATRtop6A     = ma6  + ATR 
+ATRtop12A    = ma12 + ATR
+ATRtop24A    = ma24 + ATR
+
+ATRbott6C     = ma6  - ATR * 0.5
+ATRbott12C    = ma12 - ATR * 0.5
+ATRbott24C    = ma24 - ATR * 0.5
+ATRbott6B     = ma6  - ATR * 0.75
+ATRbott12B    = ma12 - ATR * 0.75
+ATRbott24B    = ma24 - ATR * 0.75
+ATRbott6A     = ma6  - ATR 
+ATRbott12A    = ma12 - ATR 
+ATRbott24A    = ma24 - ATR 
+
+DivATR6  = ((ma6/ATRtop6C)*100)-100
+DivATR12 = ((ma12/ATRtop12C)*100)-100
+DivATR24 = ((ma24/ATRtop24C)*100)-100
+
+Div6     = (DivMA6/(DivATR6))*-100
+Div12    = (DivMA12/(DivATR12))*-100
+Div24    = (DivMA24/(DivATR24))*-100
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////  Mix & Min indicator //////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+max1  = request.security(syminfo.ticker,"1",ta.highest(60))
+max3  = request.security(syminfo.ticker,"1",ta.highest(180))
+max6  = request.security(syminfo.ticker,"1",ta.highest(360))
+max12 = request.security(syminfo.ticker,"1",ta.highest(720))
+max24 = request.security(syminfo.ticker,"1",ta.highest(1440))
+max1pct = ((max1-close)/close)*100
+max3pct = ((max3-close)/close)*100
+max6pct = ((max6-close)/close)*100
+max12pct = ((max12-close)/close)*100
+max24pct = ((max24-close)/close)*100
+
+min1  = request.security(syminfo.ticker,"1",ta.lowest(60))
+min3  = request.security(syminfo.ticker,"1",ta.lowest(180))
+min6  = request.security(syminfo.ticker,"1",ta.lowest(360))
+min12 = request.security(syminfo.ticker,"1",ta.lowest(720))
+min24 = request.security(syminfo.ticker,"1",ta.lowest(1440))
+min1pct = ((close-min1)/close)*100
+min3pct = ((close-min3)/close)*100
+min6pct = ((close-min6)/close)*100
+min12pct = ((close-min12)/close)*100
+min24pct = ((close-min24)/close)*100
+
+jumpATR_MaxR1=math.round((max1pct/((ATRpct)/2))*100,0)
+jumpATR_MaxR3=math.round((max3pct/((ATRpct)/2))*100,0)
+jumpATR_MaxR6=math.round((max6pct/(ATRpct/2))*100,0)
+jumpATR_MaxR12=math.round((max12pct/(ATRpct/2))*100,0)
+jumpATR_MaxR24=math.round((max24pct/(ATRpct/2))*100,0)
+
+dropATR_MinR1=math.round((min1pct/(ATRpct/2))*100,0)
+dropATR_MinR3=math.round((min3pct/(ATRpct/2))*100,0)
+dropATR_MinR6=math.round((min6pct/(ATRpct/2))*100,0)
+dropATR_MinR12=math.round((min12pct/(ATRpct/2))*100,0)
+dropATR_MinR24=math.round((min24pct/(ATRpct/2))*100,0)
+
+Distance_1  =  dropATR_MinR1 - jumpATR_MaxR1
+Distance_3  =  dropATR_MinR3 - jumpATR_MaxR3
+Distance_6  =  dropATR_MinR6 - jumpATR_MaxR6
+Distance_12 =  dropATR_MinR12 - jumpATR_MaxR12
+Distance_24 =  dropATR_MinR24 - jumpATR_MaxR24
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   Size   //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+size    = timeframe.period=="1"?ta.sma(volume,4999)*ta.sma(close,4999):timeframe.period=="5"?ta.sma(volume,1000)*ta.sma(close,1000):na
+
+BTCsize_1min = request.security("BTCUSDT","1",size)
+BTCsize_5min = request.security("BTCUSDT","5",size)
+
+sizeRate = timeframe.period=="1"?math.round((size/BTCsize_1min)*100,1):timeframe.period=="5"?math.round((size/BTCsize_5min)*100,1):na
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   PLOT   //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// [PLOT] Moving Avarage  //
+// plotMA1  = plot(timeframe.period=="1"?ma1:ma1,  color=color.new(color.yellow, 0), title='ma1 #0', linewidth=1, display=display.all)
+// plotMA2  = plot(timeframe.period=="1"?ma2:ma2,  color=color.new(color.red, 0), title='ma2 #0', linewidth=1, display=display.all)
+// plotMA3  = plot(timeframe.period=="1"?ma3:ma3,  color=color.new(color.aqua, 0), title='ma3 #0', linewidth=1, display=display.all)
+// plotMA4  = plot(timeframe.period=="1"?ma4:ma4,  color=color.new(color.white, 0), title='ma2 #0', linewidth=1, display=display.all)
+// plotMA5  = plot(timeframe.period=="1"?ma5:ma5,  color=color.new(color.white, 0), title='ma3 #0', linewidth=1, display=display.all)
+plotMA6  = plot(timeframe.period=="1"?ma6:ma6,  color=color.new(color.white, 0), title='ma6 #0', linewidth=1, display=display.all)
+plotMA12 = plot(timeframe.period=="1"?ma12:ma12, color=color.new(color.white, 0), title='ma12 #1', linewidth=2)
+plotMA24 = plot(timeframe.period=="1"?ma24:ma24, color=color.new(color.white,0), title='ma24 #2', linewidth=1, display=display.all)
+// fill(plotMA1, plotMA2, color=ma1>ma2?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+// fill(plotMA2, plotMA3, color=ma2>ma3?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+// fill(plotMA3, plotMA4, color=ma3>ma4?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+// fill(plotMA4, plotMA5, color=ma4>ma5?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+// fill(plotMA5, plotMA6, color=ma5>ma6?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+fill(plotMA6, plotMA12, color=ma6>ma12?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+fill(plotMA12, plotMA24, color=ma12>ma24?color.new(color.aqua, 80):color.new(#ff0000, 80), title='MA')
+
+
+// [PLOT] Avarage True Range  //
+
+// plotATRtop6A      = plot(timeframe.period=="1"?na:ATRtop6A,      color=color.new(color.aqua, 0), title='top ATR 6 x0.5',    linewidth=1, display=display.none)
+// plotATRtop12A     = plot(timeframe.period=="1"?na:ATRtop12A,     color=color.new(#ff0000, 0), title='top ATR 12 x0.5',      linewidth=1, display=display.none)
+// plotATRtop24A     = plot(timeframe.period=="1"?na:ATRtop24A,     color=color.new(#ff0000, 50), title='top ATR 24 x0.5',     linewidth=1, display=display.none)
+// fill(plotATRtop6A,plotATRtop12A,   color=color.new(color.aqua, 90))
+
+plotATRtop6C      = plot(timeframe.period=="1"?na:ATRtop6C,      color=color.new(color.aqua, 0), title='top ATR 6',         linewidth=1, display=display.none)
+plotATRtop12C     = plot(timeframe.period=="1"?na:ATRtop12C,     color=color.new(color.aqua, 0), title='top ATR 12',        linewidth=1, display=display.none)
+plotATRtop24C     = plot(timeframe.period=="1"?na:ATRtop24C,     color=color.new(color.aqua, 50), title='top ATR 24',       linewidth=1, display=display.none)
+fill(plotATRtop6C,plotATRtop12C,   color=color.new(color.blue, 90))
+
+// plotATRbott6A      = plot(timeframe.period=="1"?na:ATRbott6A,      color=color.new(#ff0000, 0), title='bott ATR 6 x0.5',    linewidth=1, display=display.none)
+// plotATRbott12A     = plot(timeframe.period=="1"?na:ATRbott12A,     color=color.new(#03ff00, 0), title='bott ATR 12 x0.5',   linewidth=1, display=display.none)
+// plotATRbott24A     = plot(timeframe.period=="1"?na:ATRbott24A,     color=color.new(#ff0000, 50), title='bott ATR 24 x0.5',  linewidth=1, display=display.none)
+// fill(plotATRbott6A,plotATRbott12A,   color=color.new(#FF00FF, 90))
+
+plotATRbott6C      = plot(timeframe.period=="1"?na:ATRbott6C,      color=color.new(#ff0000, 0), title='bott ATR 6',         linewidth=1, display=display.none)
+plotATRbott12C     = plot(timeframe.period=="1"?na:ATRbott12C,     color=color.new(#ff0000, 0), title='bott ATR 12',        linewidth=1, display=display.none)
+plotATRbott24C     = plot(timeframe.period=="1"?na:ATRbott24C,     color=color.new(#ff0000, 50), title='bott ATR 24',       linewidth=1, display=display.none)
+fill(plotATRbott6C,plotATRbott12C,   color=color.new(#ff0000, 90))
+
+// [PLOT] Mix & Min indicator  //
+
+// plot(timeframe.period=="1"?na:max1, "MAX 1H #", color=color.new(color.blue,30),style=plot.style_stepline,  display=display.all)
+// plot(timeframe.period=="1"?na:max3, "MAX 3H #", color=color.new(color.blue,50),style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:max6, "MAX 6H #", color=color.new(color.blue,0), style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:max12,"MAX 12H #",color=color.new(color.aqua,0), style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:max24,"MAX 24H #",color=color.new(color.aqua,0),style=plot.style_stepline, linewidth=2, display=display.all)
+// plot(timeframe.period=="1"?na:min1, "MIN 1H #", color=color.new(#ff0000,30),style=plot.style_stepline, display=display.all)
+// plot(timeframe.period=="1"?na:min3, "MIN 3H #", color=color.new(#ff0000,50),style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:min6, "MIN 6H #", color=color.new(#ff0000,0), style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:min12,"MIN 12H #",color=color.new(#FF00FF,0), style=plot.style_stepline, linewidth=1, display=display.all)
+// plot(timeframe.period=="1"?na:min24,"MIN 24H #",color=color.new(#FF00FF,0),style=plot.style_stepline, linewidth=2, display=display.all)
+
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   Line   //////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+startPrice                  = request.security(syminfo.ticker,"D",close[1])
+startPrice_line             = line.new(bar_index[1000],timeframe.period=="1"?na:startPrice, bar_index+ 15 ,timeframe.period=="1"?na:startPrice, color = color.new(color.yellow,0), style=line.style_dotted)
+line.delete(startPrice_line[1])
+
+startPriceYesterday         = request.security(syminfo.ticker,"D",close[2])
+startPriceYesterday_line    = line.new(bar_index[1000],timeframe.period=="1"?na: startPriceYesterday, bar_index+ 15, timeframe.period=="1"?na:startPriceYesterday, color = color.new(color.lime,0), style=line.style_dotted)
+line.delete(startPriceYesterday_line[1])
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   TABLE   /////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+var table TableA = table.new(position.bottom_center, 10, 10)
+var table TableB = table.new(position.bottom_right, 10, 10)
+
+var table TableD = table.new(position.bottom_left, 10, 10)
+var table TableE = table.new(position.top_center, 10, 10)
+var table TableF = table.new(position.bottom_center, 10, 10)
+var table TableG = table.new(position.top_left, 10, 10)
+var table TableH = table.new(position.middle_right, 10, 10)
+
+//A
+table.cell(TableA,0,0, str.tostring(sizeRate)+"%", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+ 
+//D
+table.cell(TableD, 3, 0, str.tostring(math.round(DivEMA5,1)- 100)+"", text_color = bullEMA5? color.new(color.aqua,0):bearEMA5?color.new(#ff0000,0):color.new(#ffffff,20))
+table.cell(TableD, 3, 1, str.tostring(math.round(DivEMA25,1)- 100)+"", text_color = bullEMA25? color.new(color.aqua,0):bearEMA25?color.new(#ff0000,0):color.new(#ffffff,20))
+table.cell(TableD, 3, 2, str.tostring(math.round(DivEMA50,1)- 100)+"", text_color = bullEMA50? color.new(color.aqua,0):bearEMA50?color.new(#ff0000,0):color.new(#ffffff,20))
+table.cell(TableD, 3, 3, str.tostring(math.round(DivEMA100,1)- 100)+"", text_color = bullEMA100? color.new(color.aqua,0):bearEMA100?color.new(#ff0000,0):color.new(#ffffff,20))
+table.cell(TableD, 3, 4, str.tostring(math.round(DivEMA200,1)- 100)+"", text_color = bullEMA200? color.new(color.aqua,0):bearEMA200?color.new(#ff0000,0):color.new(#ffffff,20))
+table.cell(TableD, 2, 0, "5",text_color  = color.new(#ffffff,20),bgcolor = bullEMA?color.new(color.aqua,80):bullEMA?color.new(#ff0000,80):color.new(#ffffff,80),text_halign=text.align_left)
+table.cell(TableD, 2, 1, "25",text_color = color.new(#ffffff,20),bgcolor = bullEMA?color.new(color.aqua,80):bullEMA?color.new(#ff0000,80):color.new(#ffffff,80),text_halign=text.align_left)
+table.cell(TableD, 2, 2, "50",text_color = color.new(#ffffff,20),bgcolor = bullEMA?color.new(color.aqua,80):bullEMA?color.new(#ff0000,80):color.new(#ffffff,80),text_halign=text.align_left)
+table.cell(TableD, 2, 3, "100",text_color = color.new(#ffffff,20),bgcolor = bullEMA?color.new(color.aqua,80):bullEMA?color.new(#ff0000,80):color.new(#ffffff,80),text_halign=text.align_left)
+table.cell(TableD, 2, 4, "200",text_color = color.new(#ffffff,20),bgcolor = bullEMA?color.new(color.aqua,80):bullEMA?color.new(#ff0000,80):color.new(#ffffff,80),text_halign=text.align_left)
+
+//E
+
+
+table.cell(TableE, 1, 4, str.tostring(jumpATR_MaxR1*-1)+"=" ,text_color = jumpATR_MaxR1>100?color.new(#ff0000,20):color.new(#ffffff,20))
+table.cell(TableE, 1, 3, str.tostring(jumpATR_MaxR3*-1)+"=" ,text_color = jumpATR_MaxR3>100?color.new(#ff0000,20):color.new(#ffffff,20))
+table.cell(TableE, 1, 2, str.tostring(jumpATR_MaxR6*-1)+"=" ,text_color = jumpATR_MaxR6>100?color.new(#ff0000,20):color.new(#ffffff,20))
+table.cell(TableE, 1, 1, str.tostring(jumpATR_MaxR12*-1)+"=" ,text_color = jumpATR_MaxR12>100?color.new(#ff0000,20):color.new(#ffffff,20))
+table.cell(TableE, 1, 0, str.tostring(jumpATR_MaxR24*-1)+"=" ,text_color = jumpATR_MaxR24>100?color.new(#ff0000,20):color.new(#ffffff,20))
+
+table.cell(TableE, 0, 4, str.tostring(dropATR_MinR1)+"" ,text_color = dropATR_MinR1>100?color.new(color.aqua,20):color.new(#ffffff,20))
+table.cell(TableE, 0, 3, str.tostring(dropATR_MinR3)+"" ,text_color = dropATR_MinR3>100?color.new(color.aqua,20):color.new(#ffffff,20))
+table.cell(TableE, 0, 2, str.tostring(dropATR_MinR6)+"" ,text_color = dropATR_MinR6>100?color.new(color.aqua,20):color.new(#ffffff,20))
+table.cell(TableE, 0, 1, str.tostring(dropATR_MinR12)+"" ,text_color = dropATR_MinR12>100?color.new(color.aqua,20):color.new(#ffffff,20))
+table.cell(TableE, 0, 0, str.tostring(dropATR_MinR24)+"" ,text_color = dropATR_MinR24>100?color.new(color.aqua,20):color.new(#ffffff,20))
+
+table.cell(TableE, 2, 4, str.tostring(Distance_1)+"%" , text_color = Distance_1>100?color.new(color.aqua,20): Distance_1 <-90?color.new(#ff0000,20):color.new(#ffffff,20),text_halign=text.align_right)
+table.cell(TableE, 2, 3, str.tostring(Distance_3)+"%" , text_color = Distance_3>100?color.new(color.aqua,20): Distance_3 <-90?color.new(#ff0000,20):color.new(#ffffff,20),text_halign=text.align_right)
+table.cell(TableE, 2, 2, str.tostring(Distance_6)+"%" , text_color = Distance_6>100?color.new(color.aqua,20): Distance_6 <-90?color.new(#ff0000,20):color.new(#ffffff,20),text_halign=text.align_right)
+table.cell(TableE, 2, 1, str.tostring(Distance_12)+"%" ,text_color = Distance_12>100?color.new(color.aqua,20):Distance_12<-90?color.new(#ff0000,20):color.new(#ffffff,20),text_halign=text.align_right)
+table.cell(TableE, 2, 0, str.tostring(Distance_24)+"%" ,text_color = Distance_24>100?color.new(color.aqua,20):Distance_24<-90?color.new(#ff0000,20):color.new(#ffffff,20),text_halign=text.align_right)
+
+
+//G
+table.cell(TableG, 1, 0, str.tostring(math.round(Div24,0))+"",text_color = Div24>90? color.new(color.aqua,20):Div24<-90? color.new(#ff0000,0):color.new(color.white,0))
+table.cell(TableG, 1, 1, str.tostring(math.round(Div12,0))+"",text_color = Div12>80? color.new(color.aqua,20):Div12<-80? color.new(#ff0000,0):color.new(color.white,0))
+table.cell(TableG, 1, 2, str.tostring(math.round(Div6,0))+"",text_color = Div6>70? color.new(color.aqua,20):Div6<-70? color.new(#ff0000,0):color.new(color.white,0))
+
+
+table.cell(TableG,0,0,str.tostring(math.round(DivMA6,1))+"/"+str.tostring(math.round(math.abs(DivATR6),1)),  text_color = color.new(color.white,0),bgcolor = bullMA?color.new(color.aqua,80):bearMA?color.new(#ff0000,70):color.new(#ffffff,80))
+table.cell(TableG,0,1,str.tostring(math.round(DivMA12,1))+"/"+str.tostring(math.round(math.abs(DivATR12),1)),text_color = color.new(color.white,0),bgcolor = bullMA?color.new(color.aqua,80):bearMA?color.new(#ff0000,70):color.new(#ffffff,80))
+table.cell(TableG,0,2,str.tostring(math.round(DivMA24,1))+"/"+str.tostring(math.round(math.abs(DivATR24),1)),text_color = color.new(color.white,0),bgcolor = bullMA?color.new(color.aqua,80):bearMA?color.new(#ff0000,70):color.new(#ffffff,80))
+ 
+
+
+
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   Background   /////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+ColorChanceShortC =color.new(color.blue,90)
+ColorChanceLongC  =color.new(#ff0000,90)
+ColorChanceShortB =color.new(color.aqua,85)
+ColorChanceLongB  =color.new(#FF00FF,85)
+ColorChanceShortA =color.new(color.white,80)
+ColorChanceLongA  =color.new(color.white,80)
+color ColorUnknown = na
+ 
+chanceLongC  = low < ATRbott6C or low < ATRbott12C  or  low < ATRbott24C
+chanceShortC = high > ATRtop6C or high > ATRtop12C or high > ATRtop24C
+chanceLongB  = low < ATRbott6B or low < ATRbott12B  or  low < ATRbott24B
+chanceShortB = high > ATRtop6B or high > ATRtop12B or high > ATRtop24B
+chanceLongA  = low < ATRbott6A or low < ATRbott12A  or  low < ATRbott24A
+chanceShortA = high > ATRtop6A or high > ATRtop12A or high > ATRtop24A
+
+Chance =
+ chanceLongA  ? ColorChanceLongA :
+ chanceShortA  ? ColorChanceShortA :
+ chanceLongB  ? ColorChanceLongB :
+ chanceShortB  ? ColorChanceShortB :
+ chanceLongC  ? ColorChanceLongC :
+ chanceShortC  ? ColorChanceShortC : 
+ ColorUnknown
+bgcolor(Chance)
+
+
+
+
+ ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////   Basic Candles   //////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//  Normal Candles  //
+
+overClose  = close >= close[1]
+underClose = close < close[1]
+white      = color.new(#ffffff, 0)
+black      = color.new(#000000, 0)
+plotcandle(overClose ? open : na, overClose ? high : na, overClose ? low : na, overClose ? close : na, 'BULL CANDLE', color=white, wickcolor=white, bordercolor=white)
+plotcandle(underClose ? open : na, underClose ? high : na, underClose ? low : na, underClose ? close : na, 'BEAR CANDLE', color=black, wickcolor=white, bordercolor=white)
+
+//  Candles Trend Detecter  //
+
+Up   = open > open[1] and close > close[1] and low > low[1] and high > high[1]
+Down = open < open[1] and close < close[1] and low < low[1] and high < high[1]
+blue = color.new(color.blue, 0)
+red  = color.new(#ff0000, 0)
+plotcandle(Up   ? open : na, Up   ? high : na, Up   ? low : na, Up   ? close : na, 'UP CANDLE',   color=blue, wickcolor=blue, bordercolor=blue)
+plotcandle(Down ? open : na, Down ? high : na, Down ? low : na, Down ? close : na, 'DOWN CANDLE', color=red,  wickcolor=red,  bordercolor=red)
+
+//  Big Candles Detecter  //
+
+DetectPct     = (ATRpct*0.1)
+DetectPctMini = (ATRpct*0.1)/2
+
+CandleSizePct = ((high-low)/close)*100
+bigCandle     = CandleSizePct > DetectPct
+CandleSize    = close < open ? CandleSizePct*-1 : CandleSizePct
+bullOpen  = close > open and bigCandle ? open  : na
+bullHigh  = close > open and bigCandle ? high  : na
+bullLow   = close > open and bigCandle ? low   : na
+bullClose = close > open and bigCandle ? close : na
+bearOpen  = close < open and bigCandle ? open  : na
+bearHigh  = close < open and bigCandle ? high  : na
+bearLow   = close < open and bigCandle ? low   : na
+bearClose = close < open and bigCandle ? close : na
+plotcandle(bullOpen,bullHigh,bullLow,bullClose, color=color.new(#00ced1,0), wickcolor=color.new(#00ced1,0), bordercolor=color.new(#00ced1,0))
+plotcandle(bearOpen,bearHigh,bearLow,bearClose, color=color.new(#FF00FF,0), wickcolor=color.new(#FF00FF,0), bordercolor=color.new(#FF00FF,0))
+
+bullOpenX = bullOpen and Up ? open  : na
+bullHighX  = bullHigh and Up ? high  : na
+bullLowX   = bullLow and Up ? low   : na
+bullCloseX = bullClose and Up ? close : na
+bearOpenX  = bearOpen and Down ? open  : na
+bearHighX  = bearHigh and Down ? high  : na
+bearLowX   = bearLow and Down ? low   : na
+bearCloseX = bearClose and Down ? close : na
+plotcandle(bullOpenX,bullHighX,bullLowX,bullCloseX, color=color.new(color.yellow,0), wickcolor=color.new(color.yellow,0), bordercolor=color.new(color.yellow,0))
+plotcandle(bearOpenX,bearHighX,bearLowX,bearCloseX, color=color.new(color.yellow,0), wickcolor=color.new(color.yellow,0), bordercolor=color.new(color.yellow,0))
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////// ALERT  /////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//CONDITIONS
+
+BigBullCandle = CandleSize >DetectPct
+BigBearCandle = CandleSize < DetectPct*-1
+UPUP = BigBullCandle and BigBullCandle[1]
+DWDW = BigBearCandle and BigBearCandle[1]
+
+BigBullCandleMini = CandleSize > DetectPctMini
+BigBearCandleMini = CandleSize < DetectPctMini*-1
+upupup  = BigBullCandleMini[1] and BigBullCandleMini[2] and BigBullCandleMini[3] and Up[1] and Up[2] and Up[3]
+dwdwdw  = BigBearCandleMini[1] and BigBearCandleMini[2] and BigBearCandleMini[3] and Down[1] and Down[2] and Down[3]
+
+ATRCond6bott  = close < ATRbott6C  and  close > ATRbott6C[1]
+ATRCond12bott = close < ATRbott12C and  close > ATRbott12C[1]
+ATRCond6top   = close > ATRtop6C   and  close < ATRtop6C[1]
+ATRCond12top  = close > ATRtop12C  and  close < ATRtop12C[1]
+
+Distance_DistrCond  = Distance_6<-125 or Distance_3<-80 or Distance_1<-50
+Distance_AccumCond  = Distance_6>125 or Distance_3>80 or Distance_1>50
+
+
+//SET ALERT
+
+distr_Cond    = ATRCond6bott or ATRCond12bott or DWDW or dwdwdw or Distance_DistrCond
+accum_Cond    = ATRCond6top  or ATRCond12top or UPUP or upupup or Distance_AccumCond
+
+alertcondition(distr_Cond, title="DISTR ALERT",message="DDDDD")
+alertcondition(accum_Cond, title="ACCUM ALERT",message="AAAAAAAAAA")
+
+
+
+

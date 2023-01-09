@@ -1,0 +1,152 @@
+//@version=4
+study(title="AVOL",shorttitle="AVOL", overlay= false, format=format.volume, precision=1)
+lime            = color.new(#5aff19,0)
+//グラフの基準値
+inputTop        = input(6,  "グラフの最高値")
+inputBottom     = input(-6, "グラフの最低値")
+topMid          = inputTop/2
+bottomMid       = inputBottom/2
+//AVOL INPUT
+inputLengthVolumeSMA            = input(1500,"出来高SMAで取得する足の本数")
+inputResolutionVolumeSMA        = input("1","出来高SMAで取得する足のサイズ ",type=input.resolution,options= ["1","5","15","30","60"],tooltip="どの時間足で見ていても、ここで設定した足をベースに計算されます")
+securityLengthVolumeSMA         = security(syminfo.tickerid, inputResolutionVolumeSMA, inputLengthVolumeSMA)
+inputLengthNetVolumeSMA         = input(5,"純出来高SMAで取得する足の本数")
+inputResolutionNetVolumeSMA     = input("1","純出来高SMAで取得する足のサイズ",type=input.resolution,options= ["1","5","15","30","60"],tooltip="どの時間足で見ていても、ここで設定した足をベースに計算されます")
+securityLengthNetVolumeSMA      = security(syminfo.tickerid, inputResolutionNetVolumeSMA, inputLengthNetVolumeSMA)
+//色
+red             = color.new(#ff0000,0)
+yel             = color.yellow
+
+            //出来高指数の計算している//
+            //NetVolume
+netVolume       = sign(change(close)) * volume
+            //過去ｘ日間の出来高平均値
+VolumeSMA       = sma(volume,securityLengthVolumeSMA)   
+            //過去ｘ分のNetVolume平均値
+netVolumeSMA    = sma(netVolume,securityLengthNetVolumeSMA)
+            //平均出来高乖離率//
+avolPoint       = ((netVolumeSMA/VolumeSMA)-1)
+            //過去ｘ日間の出来高平均値と、現在のロウソク乖離率を設定している   
+netVolumePointX = (netVolume/VolumeSMA)
+
+            //ロウソク乖離率に応じて星の位置とサイズ設定をしている。それを連続してプロットした。
+
+avolPointOver          = avolPoint  > topMid          and avolPoint < inputTop
+avolPointUnder         = avolPoint  < bottomMid       and avolPoint > inputBottom
+avolPointOverX         = avolPoint  > inputTop        and avolPoint < inputTop*2
+avolPointUnderX        = avolPoint  < inputBottom     and avolPoint > inputBottom*2
+avolPointOverXX        = avolPoint  > inputTop*2      and avolPoint < inputTop*3
+avolPointUnderXX       = avolPoint  < inputBottom*2   and avolPoint > inputBottom*3
+avolPointOverXXX       = avolPoint  > inputTop*3
+avolPointUnderXXX      = avolPoint  < inputBottom*3
+
+
+netVolumePointOver          = netVolumePointX  > topMid          and netVolumePointX < inputTop
+netVolumePointUnder         = netVolumePointX  < bottomMid       and netVolumePointX > inputBottom
+netVolumePointOverX         = netVolumePointX  > inputTop        and netVolumePointX < inputTop*2
+netVolumePointUnderX        = netVolumePointX  < inputBottom     and netVolumePointX > inputBottom*2
+netVolumePointOverXX        = netVolumePointX  > inputTop*2      and netVolumePointX < inputTop*4
+netVolumePointUnderXX       = netVolumePointX  < inputBottom*2   and netVolumePointX > inputBottom*4
+netVolumePointOverXXX       = netVolumePointX  > inputTop*4
+netVolumePointUnderXXX      = netVolumePointX  < inputBottom*4
+
+
+            //VWAP乖離率を表示している
+vwapPoint = ((close / vwap)-1)*100                          
+
+avolPointOverZero       = avolPoint > 0
+avolPointOverTop        = avolPoint > inputTop
+avolPointOverTopMid     = avolPoint > topMid
+avolPointUnderBottom    = avolPoint < inputBottom
+avolPointUnderBottomMid = avolPoint < bottomMid
+
+vwapPointOverZero       = vwapPoint > 0
+vwapPointOverTop        = vwapPoint > inputTop
+vwapPointOverTopMid     = vwapPoint > topMid
+vwapPointUnderBottom    = vwapPoint < inputBottom
+vwapPointUnderBottomMid = vwapPoint < bottomMid
+
+
+            //AVOL乖離率を黄色い線でPLOT
+plotAVOLpoint           = plot(avolPoint,color = color.new(color.blue,100), title="AVOL乖離率",style=plot.style_stepline,linewidth=1)
+plotNetVolumepoint      = plot(netVolumePointX,color = color.new(color.white,100), title="NetVolumeMoment",style=plot.style_stepline,linewidth=1)
+            //VWAP乖離率を黄色い線でPLOT
+plotVWAPpoint           = plot(vwapPoint,color =
+ vwapPointUnderBottomMid    ? color.new(lime,70):
+ vwapPointOverTopMid        ? color.new(lime,70):
+ vwapPointUnderBottom       ? color.new(lime,70):
+ vwapPointOverTop           ? color.new(lime,70):
+                              color.new(lime,70), title="VWAP乖離率",style=plot.style_area,linewidth=1)
+
+//グラフの基準線を書いている。hlineも使いたいけど、fillの関係でplotを使っている。
+plotZero        =   plot(0,                     color=color.new(color.white,20),    title="zero",          style=plot.style_line,  linewidth=1)
+plotTop         =   plot(inputTop,              color=color.new(color.white,80),   title="top",           style=plot.style_line,  linewidth=1, display=display.all)
+plotBottom      =   plot(inputBottom,           color=color.new(color.white,80),   title="bottom",        style=plot.style_line,  linewidth=1, display=display.all)
+//plotTopMid      =   plot(topMid,                color=color.new(color.yellow,50),   title="mid-top",       style=plot.style_line,  linewidth=1, display=display.all)
+//plotBottomMid   =   plot(bottomMid,             color=color.new(color.yellow,50),   title="mid-bottom",    style=plot.style_line,  linewidth=1, display=display.all)
+plotTopX        =   plot(topMid*3,              color=color.new(color.white,80),    title="topX",          style=plot.style_line,  linewidth=1, display=display.none)
+plotBottomX     =   plot(bottomMid*3,           color=color.new(color.white,80),    title="bottomX",       style=plot.style_line,  linewidth=1, display=display.none)
+
+plot(netVolumePointOver?     netVolumePointX: na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=1)
+plot(netVolumePointUnder?    netVolumePointX: na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=1)
+plot(netVolumePointOverX?    inputTop       : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=2)
+plot(netVolumePointUnderX?   inputBottom    : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=2)
+plot(netVolumePointOverXX?   inputTop       : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=3)
+plot(netVolumePointUnderXX?  inputBottom    : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=3)
+plot(netVolumePointOverXXX?  inputTop       : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=4)
+plot(netVolumePointUnderXXX? inputBottom    : na,           color=color.white,    title="Big Trade",    style=plot.style_cross,     linewidth=4)
+plot(netVolumePointOver?na:netVolumePointUnder?na:netVolumePointOverX?na:netVolumePointUnderX?na:netVolumePointOverXX?na:netVolumePointUnderXX?
+ na:netVolumePointOverXXX?na:netVolumePointUnderXXX?na:netVolumePointX,color=color.new(color.white,100),title="Big Trade",style=plot.style_cross,linewidth=1)
+
+plot(avolPointOver?     avolPoint        : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=1)
+plot(avolPointUnder?    avolPoint        : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=1)
+plot(avolPointOverX?    inputTop-1       : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=2)
+plot(avolPointUnderX?   inputBottom+1    : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=2)
+plot(avolPointOverXX?   inputTop-1       : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=3)
+plot(avolPointUnderXX?  inputBottom+1    : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=3)
+plot(avolPointOverXXX?  inputTop-1       : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=4)
+plot(avolPointUnderXXX? inputBottom+1    : na,           color=red,    title="Big Trade",    style=plot.style_cross,     linewidth=4)
+plot(avolPointOver?na:avolPointUnder?na:avolPointOverX?na:avolPointUnderX?na:avolPointOverXX?na:avolPointUnderXX?
+ na:avolPointOverXXX?na:avolPointUnderXXX?na:avolPoint,color=color.new(color.white,100),title="Big Trade",style=plot.style_cross,linewidth=1)
+
+//日付切り替えの、縦の点線
+
+t = time("1440", session.regular)
+is_first = na(t[1]) and not na(t) or t[1] < t
+vline(lineHigh,lineLow, Color, LineStyle, LineWidth) =>
+    return = line.new(bar_index, lineHigh, bar_index, lineLow, xloc.bar_index, extend.none, Color, LineStyle, LineWidth) 
+if is_first
+    vline(10, -10, color.new(color.white,50), line.style_solid, 1)
+    
+//帯を設定
+
+//fill(plotTop,plotTopMid, color=color.new(color.teal,85))
+//fill(plotBottom,plotBottomMid, color=color.new(color.teal,85))
+
+
+
+
+//---------損切り利確ラインの目安ラベル-----------//
+
+// diff = time-time[1]
+// longProfitPrice = round((close/syminfo.mintick)*(1+longProfitPercent))
+// longLossPrice = round((close/syminfo.mintick)*(1-longLossPercent))
+
+// var label labelLong    = na
+// var line  lineLongProfit = na
+// var line  lineLongLoss  = na
+// var line  lineLong     = na
+
+// if longCondition
+//     labelLong      := label.new(x = bar_index, y = na,text = tostring(close) + "\nT"+ tostring(longProfitPrice) + "\nL"+ tostring(longLossPrice),
+//      yloc = yloc.belowbar, color = color.new(color.red,100), textcolor = color.white, style = label.style_label_lower_right, size = size.normal)
+//     lineLongProfit := line.new(time, longProfitPrice, time+diff*inputAllout, longProfitPrice, xloc = xloc.bar_time, color = color.new(color.white,0), style = line.style_dotted, width = 1)
+//     lineLongLoss   := line.new(time, longLossPrice,   time+diff*inputAllout, longLossPrice,   xloc = xloc.bar_time, color = color.new(color.white,0), style = line.style_dotted, width = 1)
+//     lineLong       := line.new(time, long,            time+diff*inputAllout, long,            xloc = xloc.bar_time, color = color.new(color.white,0), style = line.style_dotted, width = 1)
+
+            //table使いたければいじれ
+//var tableX = table.new(position=position.bottom_right, columns=10, rows=10, border_color=color.new(color.white,50), border_width=0, frame_color=color.new(color.white,50), frame_width=0)
+//table.cell(tableX, 0,0, text=tostring(VWAPlongProfitPrice) + "\n:p :"+ tostring(inputVWAPlongProfit) ,  text_halign=text.align_left, text_color=color.new(color.black,0), bgcolor=color.new(color.red,0),  text_size=size.auto)
+//table.cell(tableX, 0,1, text=tostring(VWAPlongLossPrice)   + "\n:l  :"+ tostring(inputVWAPlongLoss) ,  text_halign=text.align_left,    text_color=color.new(color.black,0), bgcolor=color.new(color.blue,0), text_size=size.auto
+
+

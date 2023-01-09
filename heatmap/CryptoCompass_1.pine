@@ -1,0 +1,658 @@
+//@version=5
+indicator('(Crypto)Compass_1', overlay=true)
+
+/////////////
+// SYMBOLS // 
+
+u01 = input.bool(true,  title = "", group = 'Symbols', inline = 's01')
+u02 = input.bool(true,  title = "", group = 'Symbols', inline = 's02')
+u03 = input.bool(true,  title = "", group = 'Symbols', inline = 's03')
+u04 = input.bool(true,  title = "", group = 'Symbols', inline = 's04')
+u05 = input.bool(true,  title = "", group = 'Symbols', inline = 's05')
+u06 = input.bool(true,  title = "", group = 'Symbols', inline = 's06')
+u07 = input.bool(true,  title = "", group = 'Symbols', inline = 's07')
+u08 = input.bool(true,  title = "", group = 'Symbols', inline = 's08')
+u09 = input.bool(true,  title = "", group = 'Symbols', inline = 's09')
+u10 = input.bool(true,  title = "", group = 'Symbols', inline = 's10')
+u11 = input.bool(true,  title = "", group = 'Symbols', inline = 's11')
+u12 = input.bool(true,  title = "", group = 'Symbols', inline = 's12')
+u13 = input.bool(true,  title = "", group = 'Symbols', inline = 's13')
+u14 = input.bool(true,  title = "", group = 'Symbols', inline = 's14')
+u15 = input.bool(true,  title = "", group = 'Symbols', inline = 's15')
+u16 = input.bool(true,  title = "", group = 'Symbols', inline = 's16')
+u17 = input.bool(true,  title = "", group = 'Symbols', inline = 's17')
+u18 = input.bool(true,  title = "", group = 'Symbols', inline = 's18')
+u19 = input.bool(true,  title = "", group = 'Symbols', inline = 's19')
+u20 = input.bool(true,  title = "", group = 'Symbols', inline = 's20')
+u21 = input.bool(true,  title = "", group = 'Symbols', inline = 's21')
+u22 = input.bool(true,  title = "", group = 'Symbols', inline = 's22')
+u23 = input.bool(true,  title = "", group = 'Symbols', inline = 's23')
+u24 = input.bool(true,  title = "", group = 'Symbols', inline = 's24')
+u25 = input.bool(true,  title = "", group = 'Symbols', inline = 's25')
+u26 = input.bool(true,  title = "", group = 'Symbols', inline = 's26')
+u27 = input.bool(true,  title = "", group = 'Symbols', inline = 's27')
+u28 = input.bool(true,  title = "", group = 'Symbols', inline = 's28')
+u29 = input.bool(true,  title = "", group = 'Symbols', inline = 's29')
+u30 = input.bool(true,  title = "", group = 'Symbols', inline = 's30')
+u31 = input.bool(true,  title = "", group = 'Symbols', inline = 's31')
+u32 = input.bool(true,  title = "", group = 'Symbols', inline = 's32')
+u33 = input.bool(true,  title = "", group = 'Symbols', inline = 's33')
+u34 = input.bool(true,  title = "", group = 'Symbols', inline = 's34')
+u35 = input.bool(true,  title = "", group = 'Symbols', inline = 's35')
+u36 = input.bool(true, title = "", group = 'Symbols', inline = 's36')
+u37 = input.bool(true, title = "", group = 'Symbols', inline = 's37')
+// u38 = input.bool(true, title = "", group = 'Symbols', inline = 's38')
+// u39 = input.bool(true, title = "", group = 'Symbols', inline = 's39')
+// u40 = input.bool(true, title = "", group = 'Symbols', inline = 's40')
+
+
+s01 = input.symbol('BINANCE:1000BTTCUSDTPERP',  group = 'Symbols', inline = 's01')        //1
+s02 = input.symbol('BINANCE:1000SHIBUSDTPERP',  group = 'Symbols', inline = 's02')        //1
+s03 = input.symbol('BINANCE:1000XECUSDTPERP', group = 'Symbols', inline = 's03')        //1
+s04 = input.symbol('BINANCE:1INCHUSDT',  group = 'Symbols', inline = 's04')        //1
+s05 = input.symbol('BINANCE:AAVEUSDT',  group = 'Symbols', inline = 's05')        //1
+s06 = input.symbol('BINANCE:BNBUSDT',  group = 'Symbols', inline = 's06')        //1
+s07 = input.symbol('BINANCE:ADAUSDT',   group = 'Symbols', inline = 's07')        //1
+s08 = input.symbol('BINANCE:AKROUSDT',  group = 'Symbols', inline = 's08')        //1
+s09 = input.symbol('BINANCE:ALGOUSDT',  group = 'Symbols', inline = 's09')        //1
+s10 = input.symbol('BINANCE:ALICEUSDT',  group = 'Symbols', inline = 's10')        //1
+s11 = input.symbol('BINANCE:ALPHAUSDT',  group = 'Symbols', inline = 's11')        //1
+s12 = input.symbol('BINANCE:ANKRUSDT',  group = 'Symbols', inline = 's12')        //1
+s13 = input.symbol('BINANCE:ANTUSDT',  group = 'Symbols', inline = 's13')        //1
+s14 = input.symbol('BINANCE:ARUSDT',   group = 'Symbols', inline = 's14')        //1
+s15 = input.symbol('BINANCE:ARPAUSDT',   group = 'Symbols', inline = 's15')        //1
+s16 = input.symbol('BINANCE:ATAUSDT',  group = 'Symbols', inline = 's16')        //1
+s17 = input.symbol('BINANCE:ATOMUSDT',  group = 'Symbols', inline = 's17')        //1
+s18 = input.symbol('BINANCE:AUDIOUSDT',  group = 'Symbols', inline = 's18')        //1
+s19 = input.symbol('BINANCE:AVAXUSDT',  group = 'Symbols', inline = 's19')        //1
+s20 = input.symbol('BINANCE:AXSUSDT',  group = 'Symbols', inline = 's20')        //1
+s21 = input.symbol('BINANCE:BAKEUSDT',  group = 'Symbols', inline = 's21')        //1
+s22 = input.symbol('BINANCE:BALUSDT',  group = 'Symbols', inline = 's22')        //1
+s23 = input.symbol('BINANCE:BANDUSDT',  group = 'Symbols', inline = 's23')        //1
+s24 = input.symbol('BINANCE:BATUSDT',   group = 'Symbols', inline = 's24')        //1
+s25 = input.symbol('BINANCE:BCHUSDT', group = 'Symbols', inline = 's25')        //1
+s26 = input.symbol('BINANCE:BELUSDT',  group = 'Symbols', inline = 's26')        //1
+s27 = input.symbol('BINANCE:BLZUSDT', group = 'Symbols', inline = 's27')        //1
+s28 = input.symbol('BINANCE:DGBUSDT',   group = 'Symbols', inline = 's28')        //1
+s29 = input.symbol('BINANCE:TRBUSDT', group = 'Symbols', inline = 's29')        //1
+s30 = input.symbol('BINANCE:BTCUSDT',   group = 'Symbols', inline = 's30')        //1
+s31 = input.symbol('BINANCE:BTCDOMUSDTPERP',  group = 'Symbols', inline = 's31')        //1
+s32 = input.symbol('BINANCE:BTCSTUSDT',  group = 'Symbols', inline = 's32')        //1
+s33 = input.symbol('BINANCE:BTSUSDT',  group = 'Symbols', inline = 's33')        //1
+s34 = input.symbol('BINANCE:C98USDT',  group = 'Symbols', inline = 's34')        //1
+s35 = input.symbol('BINANCE:CELOUSDT',  group = 'Symbols', inline = 's35')        //1
+s36 = input.symbol('BINANCE:CELRUSDT', group = 'Symbols', inline = 's36')        //1
+s37 = input.symbol('BINANCE:CHRUSDT',   group = 'Symbols', inline = 's37')        //1
+// s01 = input.symbol('BINANCE:CHZUSDT',  group = 'Symbols', inline = 's01')        //2
+// s02 = input.symbol('BINANCE:COMPUSDT',  group = 'Symbols', inline = 's02')        //2
+// s03 = input.symbol('BINANCE:COTIUSDT', group = 'Symbols', inline = 's03')        //2
+// s04 = input.symbol('BINANCE:CRVUSDT',  group = 'Symbols', inline = 's04')        //2
+// s05 = input.symbol('BINANCE:CTKUSDT',  group = 'Symbols', inline = 's05')        //2
+// s06 = input.symbol('BINANCE:CTSIUSDT',  group = 'Symbols', inline = 's06')        //2
+// s07 = input.symbol('BINANCE:CVCUSDT',   group = 'Symbols', inline = 's07')        //2
+// s08 = input.symbol('BINANCE:DASHUSDT',  group = 'Symbols', inline = 's08')        //2
+// s09 = input.symbol('BINANCE:DEFIUSDTPERP',  group = 'Symbols', inline = 's09')        //2
+// s10 = input.symbol('BINANCE:DENTUSDT',  group = 'Symbols', inline = 's10')        //2
+// s11 = input.symbol('BINANCE:DODOUSDT',  group = 'Symbols', inline = 's11')        //2
+// s12 = input.symbol('BINANCE:DOGEUSDT',  group = 'Symbols', inline = 's12')        //2
+// s13 = input.symbol('BINANCE:DOTUSDT',  group = 'Symbols', inline = 's13')        //2
+// s14 = input.symbol('BINANCE:DUSKUSDT',   group = 'Symbols', inline = 's14')        //2
+// s15 = input.symbol('BINANCE:DYDXUSDT',   group = 'Symbols', inline = 's15')        //2
+// s16 = input.symbol('BINANCE:EGLDUSDT',  group = 'Symbols', inline = 's16')        //2
+// s17 = input.symbol('BINANCE:ENJUSDT',  group = 'Symbols', inline = 's17')        //2
+// s18 = input.symbol('BINANCE:ENSUSDT',  group = 'Symbols', inline = 's18')        //2
+// s19 = input.symbol('BINANCE:EOSUSDT',  group = 'Symbols', inline = 's19')        //2
+// s20 = input.symbol('BINANCE:ETCUSDT',  group = 'Symbols', inline = 's20')        //2
+// s21 = input.symbol('BINANCE:ETHUSDT',  group = 'Symbols', inline = 's21')        //2
+// s22 = input.symbol('BINANCE:FILUSDT',  group = 'Symbols', inline = 's22')        //2
+// s23 = input.symbol('BINANCE:FLMUSDT',  group = 'Symbols', inline = 's23')        //2
+// s24 = input.symbol('BINANCE:FLOWUSDT',   group = 'Symbols', inline = 's24')        //2
+// s25 = input.symbol('BINANCE:FTMUSDT', group = 'Symbols', inline = 's25')        //2
+// s26 = input.symbol('BINANCE:GALAUSDT',  group = 'Symbols', inline = 's26')        //2
+// s27 = input.symbol('BINANCE:GRTUSDT', group = 'Symbols', inline = 's27')        //2
+// s28 = input.symbol('BINANCE:GTCUSDT',   group = 'Symbols', inline = 's28')        //2
+// s29 = input.symbol('BINANCE:HBARUSDT', group = 'Symbols', inline = 's29')        //2
+// s30 = input.symbol('BINANCE:HNTUSDT',   group = 'Symbols', inline = 's30')        //2
+// s31 = input.symbol('BINANCE:HOTUSDT',  group = 'Symbols', inline = 's31')        //2
+// s32 = input.symbol('BINANCE:ICPUSDT',  group = 'Symbols', inline = 's32')        //2
+// s33 = input.symbol('BINANCE:ICXUSDT',  group = 'Symbols', inline = 's33')        //2
+// s34 = input.symbol('BINANCE:IMXUSDT',  group = 'Symbols', inline = 's34')        //2
+// s35 = input.symbol('BINANCE:IOSTUSDT',  group = 'Symbols', inline = 's35')        //2
+// s36 = input.symbol('BINANCE:IOTAUSDT', group = 'Symbols', inline = 's36')        //2
+// s37 = input.symbol('BINANCE:IOTXUSDT',   group = 'Symbols', inline = 's37')        //2
+// s01 = input.symbol('BINANCE:KAVAUSDT',  group = 'Symbols', inline = 's01')        //3
+// s02 = input.symbol('BINANCE:KEEPUSDT',  group = 'Symbols', inline = 's02')        //3
+// s03 = input.symbol('BINANCE:KLAYUSDT', group = 'Symbols', inline = 's03')        //3
+// s04 = input.symbol('BINANCE:KNCUSDT',  group = 'Symbols', inline = 's04')        //3
+// s05 = input.symbol('BINANCE:KSMUSDT',  group = 'Symbols', inline = 's05')        //3
+// s06 = input.symbol('BINANCE:LINAUSDT',  group = 'Symbols', inline = 's06')        //3
+// s07 = input.symbol('BINANCE:LINKUSDT',   group = 'Symbols', inline = 's07')        //3
+// s08 = input.symbol('BINANCE:LITUSDT',  group = 'Symbols', inline = 's08')        //3
+// s09 = input.symbol('BINANCE:LPTUSDT',  group = 'Symbols', inline = 's09')        //3
+// s10 = input.symbol('BINANCE:LRCUSDT',  group = 'Symbols', inline = 's10')        //3
+// s11 = input.symbol('BINANCE:LTCUSDT',  group = 'Symbols', inline = 's11')        //3
+// s12 = input.symbol('BINANCE:LUNAUSDT',  group = 'Symbols', inline = 's12')        //3
+// s13 = input.symbol('BINANCE:MANAUSDT',  group = 'Symbols', inline = 's13')        //3
+// s14 = input.symbol('BINANCE:MASKUSDT',   group = 'Symbols', inline = 's14')        //3
+// s15 = input.symbol('BINANCE:MATICUSDT',   group = 'Symbols', inline = 's15')        //3
+// s16 = input.symbol('BINANCE:MKRUSDT',  group = 'Symbols', inline = 's16')        //3
+// s17 = input.symbol('BINANCE:MTLUSDT',  group = 'Symbols', inline = 's17')        //3
+// s18 = input.symbol('BINANCE:NEARUSDT',  group = 'Symbols', inline = 's18')        //3
+// s19 = input.symbol('BINANCE:NEOUSDT',  group = 'Symbols', inline = 's19')        //3
+// s20 = input.symbol('BINANCE:NKNUSDT',  group = 'Symbols', inline = 's20')        //3
+// s21 = input.symbol('BINANCE:NUUSDT',  group = 'Symbols', inline = 's21')        //3
+// s22 = input.symbol('BINANCE:OCEANUSDT',  group = 'Symbols', inline = 's22')        //3
+// s23 = input.symbol('BINANCE:OGNUSDT',  group = 'Symbols', inline = 's23')        //3
+// s24 = input.symbol('BINANCE:OMGUSDT',   group = 'Symbols', inline = 's24')        //3
+// s25 = input.symbol('BINANCE:ONEUSDT', group = 'Symbols', inline = 's25')        //3
+// s26 = input.symbol('BINANCE:ONTUSDT',  group = 'Symbols', inline = 's26')        //3
+// s27 = input.symbol('BINANCE:PEOPLEUSDT', group = 'Symbols', inline = 's27')        //3
+// s28 = input.symbol('BINANCE:QTUMUSDT',   group = 'Symbols', inline = 's28')        //3
+// s29 = input.symbol('BINANCE:RAYUSDT', group = 'Symbols', inline = 's29')        //3
+// s30 = input.symbol('BINANCE:REEFUSDT',   group = 'Symbols', inline = 's30')        //3
+// s31 = input.symbol('BINANCE:RENUSDT',  group = 'Symbols', inline = 's31')        //3
+// s32 = input.symbol('BINANCE:RLCUSDT',  group = 'Symbols', inline = 's32')        //3
+// s33 = input.symbol('BINANCE:ROSEUSDT',  group = 'Symbols', inline = 's33')        //3
+// s34 = input.symbol('BINANCE:RSRUSDT',  group = 'Symbols', inline = 's34')        //3
+// s35 = input.symbol('BINANCE:RUNEUSDT',  group = 'Symbols', inline = 's35')        //3
+// s36 = input.symbol('BINANCE:RVNUSDT', group = 'Symbols', inline = 's36')        //3
+// s37 = input.symbol('BINANCE:SANDUSDT',   group = 'Symbols', inline = 's37')        //3
+// s01 = input.symbol('BINANCE:SCUSDT',  group = 'Symbols', inline = 's01')        //4
+// s02 = input.symbol('BINANCE:SFPUSDT',  group = 'Symbols', inline = 's02')        //4
+// s03 = input.symbol('BINANCE:SKLUSDT', group = 'Symbols', inline = 's03')        //4
+// s04 = input.symbol('BINANCE:SNXUSDT',  group = 'Symbols', inline = 's04')        //4
+// s05 = input.symbol('BINANCE:SOLUSDT',  group = 'Symbols', inline = 's05')        //4
+// s06 = input.symbol('BINANCE:SRMUSDT',  group = 'Symbols', inline = 's06')        //4
+// s07 = input.symbol('BINANCE:STMXUSDT',   group = 'Symbols', inline = 's07')        //4
+// s08 = input.symbol('BINANCE:STORJUSDT',  group = 'Symbols', inline = 's08')        //4
+// s09 = input.symbol('BINANCE:SUSHIUSDT',  group = 'Symbols', inline = 's09')        //4
+// s10 = input.symbol('BINANCE:SXPUSDT',  group = 'Symbols', inline = 's10')        //4
+// s11 = input.symbol('BINANCE:THETAUSDT',  group = 'Symbols', inline = 's11')        //4
+// s12 = input.symbol('BINANCE:TLMUSDT',  group = 'Symbols', inline = 's12')        //4
+// s13 = input.symbol('BINANCE:TOMOUSDT',  group = 'Symbols', inline = 's13')        //4
+// s14 = input.symbol('BINANCE:TRXUSDT',   group = 'Symbols', inline = 's14')        //4
+// s15 = input.symbol('BINANCE:UNFIUSDT',   group = 'Symbols', inline = 's15')        //4
+// s16 = input.symbol('BINANCE:UNIUSDT',  group = 'Symbols', inline = 's16')        //4
+// s17 = input.symbol('BINANCE:VETUSDT',  group = 'Symbols', inline = 's17')        //4
+// s18 = input.symbol('BINANCE:WAVESUSDT',  group = 'Symbols', inline = 's18')        //4
+// s19 = input.symbol('BINANCE:XEMUSDT',  group = 'Symbols', inline = 's19')        //4
+// s20 = input.symbol('BINANCE:XLMUSDT',  group = 'Symbols', inline = 's20')        //4
+// s21 = input.symbol('BINANCE:XMRUSDT',  group = 'Symbols', inline = 's21')        //4
+// s22 = input.symbol('BINANCE:XRPUSDT',  group = 'Symbols', inline = 's22')        //4
+// s23 = input.symbol('BINANCE:XTZUSDT',  group = 'Symbols', inline = 's23')        //4
+// s24 = input.symbol('BINANCE:YFIUSDT',   group = 'Symbols', inline = 's24')        //4
+// s25 = input.symbol('BINANCE:YFIIUSDT', group = 'Symbols', inline = 's25')        //4
+// s26 = input.symbol('BINANCE:ZECUSDT',  group = 'Symbols', inline = 's26')        //4
+// s27 = input.symbol('BINANCE:ZENUSDT', group = 'Symbols', inline = 's27')        //4
+// s28 = input.symbol('BINANCE:ZILUSDT',   group = 'Symbols', inline = 's28')        //4
+// s29 = input.symbol('BINANCE:ZRXUSDT', group = 'Symbols', inline = 's29')        //4
+// s30 = input.symbol('BINANCE:BTCUSDT',   group = 'Symbols', inline = 's30')        //4
+// s31 = input.symbol('BINANCE:BTCUSDT',  group = 'Symbols', inline = 's31')        //4
+// s32 = input.symbol('BINANCE:BTCUSDT',  group = 'Symbols', inline = 's32')        //4
+// s33 = input.symbol('BINANCE:BTCUSDT',  group = 'Symbols', inline = 's33')        //4
+// s34 = input.symbol('BINANCE:BTCUSDT',  group = 'Symbols', inline = 's34')        //4
+// s35 = input.symbol('BINANCE:BTCUSDT',  group = 'Symbols', inline = 's35')        //4
+// s36 = input.symbol('BINANCE:BTCUSDT', group = 'Symbols', inline = 's36')        //4
+// s37 = input.symbol('BINANCE:BTCUSDT',   group = 'Symbols', inline = 's37')        //4
+
+//////////////////
+// CALCULATIONS //
+
+// Get only symbol
+only_symbol(s) => 
+    array.get(str.split(s, ":"), 1)
+
+screener_func() =>
+    ATR         = ta.sma(ta.highest(high,1245)-ta.lowest(low,1245), 4999)
+    BAND        = ATR * 0.48
+
+    VWMA1H     = ta.vwma(close, 60)
+    BAND1H     = VWMA1H + BAND
+    DivMA1     = ((close/VWMA1H)*100)-100
+    DivATR1    = ((VWMA1H/BAND1H)*100)-100
+    Div1       = math.round((DivMA1/DivATR1)*-100,0)
+
+
+    VWMA3H     = ta.vwma(close, 180)
+    BAND3H     = VWMA3H + BAND
+    DivMA3     = ((close/VWMA3H)*100)-100
+    DivATR3    = ((VWMA3H/BAND3H)*100)-100
+    Div3       = math.round((DivMA3/DivATR3)*-100,0)
+
+
+    VWMA6H     = ta.vwma(close, 360)
+    BAND6H     = VWMA6H + BAND
+    DivMA6     = ((close/VWMA6H)*100)-100
+    DivATR6    = ((VWMA6H/BAND6H)*100)-100
+    Div6       = math.round((DivMA6/DivATR6)*-100,0)
+
+    VWMA12H     = ta.vwma(close, 720)
+    BAND12H     = VWMA12H + BAND
+    DivMA12     = ((close/VWMA12H)*100)-100
+    DivATR12    = ((VWMA12H/BAND12H)*100)-100
+    Div12       = math.round((DivMA12/DivATR12)*-100,0)
+
+    VWMA24H     = ta.vwma(close, 1440)
+    BAND24H     = VWMA24H + BAND
+    DivMA24     = ((close/VWMA24H)*100)-100
+    DivATR24    = ((VWMA24H/BAND24H)*100)-100
+    Div24       = math.round((DivMA24/DivATR24)*-100,0)
+    
+    CHANGE = math.round(((close / close[1])*100)-100,1)
+
+    [Div1, Div3, Div6, Div12, Div24]
+
+
+
+// Security call
+[F01, G01, H01, I01, J01] = request.security(s01, timeframe.period, screener_func())
+[F02, G02, H02, I02, J02] = request.security(s02, timeframe.period, screener_func())
+[F03, G03, H03, I03, J03] = request.security(s03, timeframe.period, screener_func())
+[F04, G04, H04, I04, J04] = request.security(s04, timeframe.period, screener_func())
+[F05, G05, H05, I05, J05] = request.security(s05, timeframe.period, screener_func())
+[F06, G06, H06, I06, J06] = request.security(s06, timeframe.period, screener_func())
+[F07, G07, H07, I07, J07] = request.security(s07, timeframe.period, screener_func())
+[F08, G08, H08, I08, J08] = request.security(s08, timeframe.period, screener_func())
+[F09, G09, H09, I09, J09] = request.security(s09, timeframe.period, screener_func())
+[F10, G10, H10, I10, J10] = request.security(s10, timeframe.period, screener_func())
+[F11, G11, H11, I11, J11] = request.security(s11, timeframe.period, screener_func())
+[F12, G12, H12, I12, J12] = request.security(s12, timeframe.period, screener_func())
+[F13, G13, H13, I13, J13] = request.security(s13, timeframe.period, screener_func())
+[F14, G14, H14, I14, J14] = request.security(s14, timeframe.period, screener_func())
+[F15, G15, H15, I15, J15] = request.security(s15, timeframe.period, screener_func())
+[F16, G16, H16, I16, J16] = request.security(s16, timeframe.period, screener_func())
+[F17, G17, H17, I17, J17] = request.security(s17, timeframe.period, screener_func())
+[F18, G18, H18, I18, J18] = request.security(s18, timeframe.period, screener_func())
+[F19, G19, H19, I19, J19] = request.security(s19, timeframe.period, screener_func())
+[F20, G20, H20, I20, J20] = request.security(s20, timeframe.period, screener_func())
+[F21, G21, H21, I21, J21] = request.security(s21, timeframe.period, screener_func())
+[F22, G22, H22, I22, J22] = request.security(s22, timeframe.period, screener_func())
+[F23, G23, H23, I23, J23] = request.security(s23, timeframe.period, screener_func())
+[F24, G24, H24, I24, J24] = request.security(s24, timeframe.period, screener_func())
+[F25, G25, H25, I25, J25] = request.security(s25, timeframe.period, screener_func())
+[F26, G26, H26, I26, J26] = request.security(s26, timeframe.period, screener_func())
+[F27, G27, H27, I27, J27] = request.security(s27, timeframe.period, screener_func())
+[F28, G28, H28, I28, J28] = request.security(s28, timeframe.period, screener_func())
+[F29, G29, H29, I29, J29] = request.security(s29, timeframe.period, screener_func())
+[F30, G30, H30, I30, J30] = request.security(s30, timeframe.period, screener_func())
+[F31, G31, H31, I31, J31] = request.security(s31, timeframe.period, screener_func())
+[F32, G32, H32, I32, J32] = request.security(s32, timeframe.period, screener_func())
+[F33, G33, H33, I33, J33] = request.security(s33, timeframe.period, screener_func())
+[F34, G34, H34, I34, J34] = request.security(s34, timeframe.period, screener_func())
+[F35, G35, H35, I35, J35] = request.security(s35, timeframe.period, screener_func())
+[F36, G36, H36, I36, J36] = request.security(s36, timeframe.period, screener_func())
+[F37, G37, H37, I37, J37] = request.security(s37, timeframe.period, screener_func())
+// [F38, G38, H38, I38, J38] = request.security(s38, timeframe.period, screener_func())
+// [F39, G39, H39, I39, J39] = request.security(s39, timeframe.period, screener_func())
+// [F40, G40, H40, I40, J40] = request.security(s40, timeframe.period, screener_func())
+
+
+////////////
+// ARRAYS //
+
+s_arr   = array.new_string(0)
+u_arr   = array.new_bool(0)
+F_arr  = array.new_float(0)
+G_arr = array.new_float(0)
+H_arr = array.new_float(0)
+I_arr = array.new_float(0)
+J_arr = array.new_float(0)
+
+// Add Symbols 
+array.push(s_arr, only_symbol(s01))
+array.push(s_arr, only_symbol(s02))
+array.push(s_arr, only_symbol(s03))
+array.push(s_arr, only_symbol(s04))
+array.push(s_arr, only_symbol(s05))
+array.push(s_arr, only_symbol(s06))
+array.push(s_arr, only_symbol(s07))
+array.push(s_arr, only_symbol(s08))
+array.push(s_arr, only_symbol(s09))
+array.push(s_arr, only_symbol(s10))
+array.push(s_arr, only_symbol(s11))
+array.push(s_arr, only_symbol(s12))
+array.push(s_arr, only_symbol(s13))
+array.push(s_arr, only_symbol(s14))
+array.push(s_arr, only_symbol(s15))
+array.push(s_arr, only_symbol(s16))
+array.push(s_arr, only_symbol(s17))
+array.push(s_arr, only_symbol(s18))
+array.push(s_arr, only_symbol(s19))
+array.push(s_arr, only_symbol(s20))
+array.push(s_arr, only_symbol(s21))
+array.push(s_arr, only_symbol(s22))
+array.push(s_arr, only_symbol(s23))
+array.push(s_arr, only_symbol(s24))
+array.push(s_arr, only_symbol(s25))
+array.push(s_arr, only_symbol(s26))
+array.push(s_arr, only_symbol(s27))
+array.push(s_arr, only_symbol(s28))
+array.push(s_arr, only_symbol(s29))
+array.push(s_arr, only_symbol(s30))
+array.push(s_arr, only_symbol(s31))
+array.push(s_arr, only_symbol(s32))
+array.push(s_arr, only_symbol(s33))
+array.push(s_arr, only_symbol(s34))
+array.push(s_arr, only_symbol(s35))
+array.push(s_arr, only_symbol(s36))
+array.push(s_arr, only_symbol(s37))
+// array.push(s_arr, only_symbol(s38))
+// array.push(s_arr, only_symbol(s39))
+// array.push(s_arr, only_symbol(s40))
+
+///////////
+// FLAGS //
+
+array.push(u_arr, u01)
+array.push(u_arr, u02)
+array.push(u_arr, u03)
+array.push(u_arr, u04)
+array.push(u_arr, u05)
+array.push(u_arr, u06)
+array.push(u_arr, u07)
+array.push(u_arr, u08)
+array.push(u_arr, u09)
+array.push(u_arr, u10)
+array.push(u_arr, u11)
+array.push(u_arr, u12)
+array.push(u_arr, u13)
+array.push(u_arr, u14)
+array.push(u_arr, u15)
+array.push(u_arr, u16)
+array.push(u_arr, u17)
+array.push(u_arr, u18)
+array.push(u_arr, u19)
+array.push(u_arr, u20)
+array.push(u_arr, u21)
+array.push(u_arr, u22)
+array.push(u_arr, u23)
+array.push(u_arr, u24)
+array.push(u_arr, u25)
+array.push(u_arr, u26)
+array.push(u_arr, u27)
+array.push(u_arr, u28)
+array.push(u_arr, u29)
+array.push(u_arr, u30)
+array.push(u_arr, u31)
+array.push(u_arr, u32)
+array.push(u_arr, u33)
+array.push(u_arr, u34)
+array.push(u_arr, u35)
+array.push(u_arr, u36)
+array.push(u_arr, u37)
+// array.push(u_arr, u38)
+// array.push(u_arr, u39)
+// array.push(u_arr, u40)
+
+///////////
+// CLOSJ //
+
+array.push(F_arr, F01)
+array.push(F_arr, F02)
+array.push(F_arr, F03)
+array.push(F_arr, F04)
+array.push(F_arr, F05)
+array.push(F_arr, F06)
+array.push(F_arr, F07)
+array.push(F_arr, F08)
+array.push(F_arr, F09)
+array.push(F_arr, F10)
+array.push(F_arr, F11)
+array.push(F_arr, F12)
+array.push(F_arr, F13)
+array.push(F_arr, F14)
+array.push(F_arr, F15)
+array.push(F_arr, F16)
+array.push(F_arr, F17)
+array.push(F_arr, F18)
+array.push(F_arr, F19)
+array.push(F_arr, F20)
+array.push(F_arr, F21)
+array.push(F_arr, F22)
+array.push(F_arr, F23)
+array.push(F_arr, F24)
+array.push(F_arr, F25)
+array.push(F_arr, F26)
+array.push(F_arr, F27)
+array.push(F_arr, F28)
+array.push(F_arr, F29)
+array.push(F_arr, F30)
+array.push(F_arr, F31)
+array.push(F_arr, F32)
+array.push(F_arr, F33)
+array.push(F_arr, F34)
+array.push(F_arr, F35)
+array.push(F_arr, F36)
+array.push(F_arr, F37)
+// array.push(F_arr, F38)
+// array.push(F_arr, F39)
+// array.push(F_arr, F40)
+
+/////////
+// G //
+
+array.push(G_arr, G01)
+array.push(G_arr, G02)
+array.push(G_arr, G03)
+array.push(G_arr, G04)
+array.push(G_arr, G05)
+array.push(G_arr, G06)
+array.push(G_arr, G07)
+array.push(G_arr, G08)
+array.push(G_arr, G09)
+array.push(G_arr, G10)
+array.push(G_arr, G11)
+array.push(G_arr, G12)
+array.push(G_arr, G13)
+array.push(G_arr, G14)
+array.push(G_arr, G15)
+array.push(G_arr, G16)
+array.push(G_arr, G17)
+array.push(G_arr, G18)
+array.push(G_arr, G19)
+array.push(G_arr, G20)
+array.push(G_arr, G21)
+array.push(G_arr, G22)
+array.push(G_arr, G23)
+array.push(G_arr, G24)
+array.push(G_arr, G25)
+array.push(G_arr, G26)
+array.push(G_arr, G27)
+array.push(G_arr, G28)
+array.push(G_arr, G29)
+array.push(G_arr, G30)
+array.push(G_arr, G31)
+array.push(G_arr, G32)
+array.push(G_arr, G33)
+array.push(G_arr, G34)
+array.push(G_arr, G35)
+array.push(G_arr, G36)
+array.push(G_arr, G37)
+// array.push(G_arr, G38)
+// array.push(G_arr, G39)
+// array.push(G_arr, G40)
+
+/////////
+// H //
+
+array.push(H_arr, H01)
+array.push(H_arr, H02)
+array.push(H_arr, H03)
+array.push(H_arr, H04)
+array.push(H_arr, H05)
+array.push(H_arr, H06)
+array.push(H_arr, H07)
+array.push(H_arr, H08)
+array.push(H_arr, H09)
+array.push(H_arr, H10)
+array.push(H_arr, H11)
+array.push(H_arr, H12)
+array.push(H_arr, H13)
+array.push(H_arr, H14)
+array.push(H_arr, H15)
+array.push(H_arr, H16)
+array.push(H_arr, H17)
+array.push(H_arr, H18)
+array.push(H_arr, H19)
+array.push(H_arr, H20)
+array.push(H_arr, H21)
+array.push(H_arr, H22)
+array.push(H_arr, H23)
+array.push(H_arr, H24)
+array.push(H_arr, H25)
+array.push(H_arr, H26)
+array.push(H_arr, H27)
+array.push(H_arr, H28)
+array.push(H_arr, H29)
+array.push(H_arr, H30)
+array.push(H_arr, H31)
+array.push(H_arr, H32)
+array.push(H_arr, H33)
+array.push(H_arr, H34)
+array.push(H_arr, H35)
+array.push(H_arr, H36)
+array.push(H_arr, H37)
+// array.push(H_arr, H38)
+// array.push(H_arr, H39)
+// array.push(H_arr, H40)
+
+/////////
+// I //
+
+array.push(I_arr, I01)
+array.push(I_arr, I02)
+array.push(I_arr, I03)
+array.push(I_arr, I04)
+array.push(I_arr, I05)
+array.push(I_arr, I06)
+array.push(I_arr, I07)
+array.push(I_arr, I08)
+array.push(I_arr, I09)
+array.push(I_arr, I10)
+array.push(I_arr, I11)
+array.push(I_arr, I12)
+array.push(I_arr, I13)
+array.push(I_arr, I14)
+array.push(I_arr, I15)
+array.push(I_arr, I16)
+array.push(I_arr, I17)
+array.push(I_arr, I18)
+array.push(I_arr, I19)
+array.push(I_arr, I20)
+array.push(I_arr, I21)
+array.push(I_arr, I22)
+array.push(I_arr, I23)
+array.push(I_arr, I24)
+array.push(I_arr, I25)
+array.push(I_arr, I26)
+array.push(I_arr, I27)
+array.push(I_arr, I28)
+array.push(I_arr, I29)
+array.push(I_arr, I30)
+array.push(I_arr, I31)
+array.push(I_arr, I32)
+array.push(I_arr, I33)
+array.push(I_arr, I34)
+array.push(I_arr, I35)
+array.push(I_arr, I36)
+array.push(I_arr, I37)
+// array.push(I_arr, I38)
+// array.push(I_arr, I39)
+// array.push(I_arr, I40)
+
+////////////////
+// J //
+
+array.push(J_arr, J01)
+array.push(J_arr, J02)
+array.push(J_arr, J03)
+array.push(J_arr, J04)
+array.push(J_arr, J05)
+array.push(J_arr, J06)
+array.push(J_arr, J07)
+array.push(J_arr, J08)
+array.push(J_arr, J09)
+array.push(J_arr, J10)
+array.push(J_arr, J11)
+array.push(J_arr, J12)
+array.push(J_arr, J13)
+array.push(J_arr, J14)
+array.push(J_arr, J15)
+array.push(J_arr, J16)
+array.push(J_arr, J17)
+array.push(J_arr, J18)
+array.push(J_arr, J19)
+array.push(J_arr, J20)
+array.push(J_arr, J21)
+array.push(J_arr, J22)
+array.push(J_arr, J23)
+array.push(J_arr, J24)
+array.push(J_arr, J25)
+array.push(J_arr, J26)
+array.push(J_arr, J27)
+array.push(J_arr, J28)
+array.push(J_arr, J29)
+array.push(J_arr, J30)
+array.push(J_arr, J31)
+array.push(J_arr, J32)
+array.push(J_arr, J33)
+array.push(J_arr, J34)
+array.push(J_arr, J35)
+array.push(J_arr, J36)
+array.push(J_arr, J37)
+// array.push(J_arr, J38)
+// array.push(J_arr, J39)
+// array.push(J_arr, J40)
+
+
+///////////
+// PLOTS //
+
+F = 60
+G = 80
+H = 100
+I = 120
+J = 150
+
+var tbl = table.new(position.top_left, 6, 41, frame_color=color.new(#151715,0), frame_width=0, border_width=2, border_color=color.new(color.white, 100))
+if barstate.islast
+    // table.cell(tbl, 0, 0, 'Symbol',  text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+    // table.cell(tbl, 1, 0, '1H',      text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+    // table.cell(tbl, 2, 0, '3H',      text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+    // table.cell(tbl, 3, 0, '6H',      text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+    // table.cell(tbl, 4, 0, '12H',     text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+    // table.cell(tbl, 5, 0, '24H',     text_halign = text.align_center, bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+
+    // for i = 0 to 39 CHANGE DEPENDS ON HOW MANY DO YOU WATCH
+    for i = 0 to 36
+        if array.get(u_arr, i)
+            F_col  = array.get(F_arr, i) > F  ? color.blue    : array.get(F_arr, i) < F*-1 ? color.fuchsia : color.new(color.gray,100)
+            G_col  = array.get(G_arr, i) > G  ? color.blue    : array.get(G_arr, i) < G*-1 ? color.fuchsia : color.new(color.gray,100)
+            H_col  = array.get(H_arr, i) > H  ? color.green   : array.get(H_arr, i) < H*-1 ? color.red : color.new(color.gray,100) 
+            I_col  = array.get(I_arr, i) > I  ? color.green   : array.get(I_arr, i) < I*-1 ? color.red : color.new(color.gray,100) 
+            J_col  = array.get(J_arr, i) > J  ? color.green   : array.get(J_arr, i) < J*-1 ? color.red : color.new(color.gray,100) 
+            
+            F_txt  = array.get(F_arr, i) > F  ? color.white   : array.get(F_arr, i) < F*-1 ? color.white : array.get(F_arr, i) > 0  ? color.aqua : color.new(#ff0000,00)
+            G_txt  = array.get(G_arr, i) > G  ? color.white   : array.get(G_arr, i) < G*-1 ? color.white : array.get(G_arr, i) > 0  ? color.aqua : color.new(#ff0000,00)
+            H_txt  = array.get(H_arr, i) > H  ? color.white   : array.get(H_arr, i) < H*-1 ? color.white : array.get(H_arr, i) > 0  ? color.aqua : color.new(#ff0000,00) 
+            I_txt  = array.get(I_arr, i) > I  ? color.white   : array.get(I_arr, i) < I*-1 ? color.white : array.get(I_arr, i) > 0  ? color.aqua : color.new(#ff0000,00)
+            J_txt  = array.get(J_arr, i) > J  ? color.white   : array.get(J_arr, i) < J*-1 ? color.white : array.get(J_arr, i) > 0  ? color.aqua : color.new(#ff0000,00)
+
+            table.cell(tbl, 0, i + 1, array.get(s_arr, i),                               text_halign = text.align_left,   bgcolor = color.new(color.gray,100), text_color = color.white, text_size = size.small)
+            table.cell(tbl, 1, i + 1, str.tostring(array.get(F_arr, i)),                 text_halign = text.align_center, bgcolor = F_col,    text_color = F_txt, text_size = size.small)
+            table.cell(tbl, 2, i + 1, str.tostring(array.get(G_arr, i), "#.##"),         text_halign = text.align_center, bgcolor = G_col,    text_color = G_txt, text_size = size.small)
+            table.cell(tbl, 3, i + 1, str.tostring(array.get(H_arr, i), "#.##"),         text_halign = text.align_center, bgcolor = H_col,    text_color = H_txt, text_size = size.small)
+            table.cell(tbl, 4, i + 1, str.tostring(array.get(I_arr, i), "#.##"),         text_halign = text.align_center, bgcolor = I_col   , text_color = I_txt, text_size = size.small)
+            table.cell(tbl, 5, i + 1, str.tostring(array.get(J_arr, i), "#.##"),         text_halign = text.align_center, bgcolor = J_col,    text_color = J_txt, text_size = size.small)
+            
+            
+            
+            
+            
+
+
+
+
+
+
+

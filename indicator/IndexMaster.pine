@@ -1,0 +1,104 @@
+//@version=4
+study("INDEX","INDEX",false,precision=2)
+
+vwapTable2= table.new(position.top_center,10,10,bgcolor=color.new(#000000,51))
+
+jpStyle=plot.style_stepline
+usStyle=plot.style_line
+
+f_noRepaint(ticker,res, src) => security(ticker, res, src[barstate.isrealtime ? 1:0])
+
+nikkeiD = f_noRepaint("TVC:NI225","D",close)
+nikkei5 = security("TVC:NI225",timeframe.period,close)
+nikkei = ((nikkei5/nikkeiD)- 1)*100 
+
+topixD = f_noRepaint("TSE:TOPIX","D",close)
+topix5 = security("TSE:TOPIX",timeframe.period,close)
+topix = ((topix5/topixD)- 1)*100 
+
+mosD = f_noRepaint("TSE:MOS","D",close)
+mos5 = security("TSE:MOS",timeframe.period,close)
+mos = ((mos5/mosD)- 1)*100 
+
+JASDAQD = f_noRepaint("TSE:0000","D",close)
+JASDAQ5 = security("TSE:0000",timeframe.period,close)
+JASDAQ = ((JASDAQ5/JASDAQD)- 1)*100 
+
+BDID = security("INDEX:BDI","D",close[1])
+BDI5 = security("INDEX:BDI","D",close)
+BDI = ((BDI5/BDID)- 1)*100 
+
+BTCD = f_noRepaint("CRYPTOCAP:BTC","D",close[1])
+BTC5 = f_noRepaint("CRYPTOCAP:BTC","D",close)
+BTC = ((BTC5/BTCD)- 1)*100 
+
+SOXD = security("NASDAQ:SOX","D",close[1])
+SOX5 = security("NASDAQ:SOX","D",close)
+SOX = ((SOX5/SOXD)- 1)*100 
+
+DJUD = security("DJ:DJU","D",close[1])
+DJU5 = security("DJ:DJU","D",close)
+DJU = ((DJU5/DJUD)- 1)*100 
+
+SP500D = security("FRED:SP500","D",close[1])
+SP5005 = security("FRED:SP500","D",close)
+SP500 = ((SP5005/SP500D)- 1)*100 
+
+
+plot(round(nikkei,2),"NI225",color=color.new(color.blue,0),  style=jpStyle, linewidth=2)
+plot(round(topix,2), "TOPIX",color=color.new(color.purple,0),style=jpStyle, linewidth=2)
+plot(round(mos,2),   "MOS",  color=color.new(color.red,0),   style=jpStyle, linewidth=2)
+plot(round(JASDAQ,2),"JDQ",  color=color.new(color.yellow,0),style=jpStyle, linewidth=2)
+
+plot(round(DJU,2),   "DOW",      color=color.new(color.blue,0),  style=usStyle,display=display.none)
+plot(round(SP500,2), "SP500",    color=color.new(color.purple,0),style=usStyle,display=display.none)
+plot(round(BTC,2),   "BTC",      color=color.new(color.yellow,0),style=usStyle,display=display.none)
+plot(round(SOX,2),   "SOX",      color=color.new(color.green,0), style=usStyle,display=display.none)
+plot(round(BDI,2),   "BDI",      color=color.new(color.aqua,0),  style=usStyle,display=display.none)
+
+
+plot(0,              "",         color=color.new(color.white,0),  linewidth=2)
+
+
+// vwapTable= table.new(position.middle_right,10,10,bgcolor=color.new(#000000,100))
+// table.cell(vwapTable,0,0,tostring(round(nikkei,2)),text_color = color.blue,   text_halign = text.align_right)
+// table.cell(vwapTable,0,1,tostring(round(topix,2)), text_color = color.purple, text_halign = text.align_right)
+// table.cell(vwapTable,0,2,tostring(round(mos,2)),   text_color = color.red,    text_halign = text.align_right)
+// table.cell(vwapTable,0,3,tostring(round(JASDAQ)),  text_color = color.yellow, text_halign = text.align_right)
+table.cell(vwapTable2,0,0,tostring(round(DJU,1))   + "/DOW", text_color = color.blue,   text_halign = text.align_right)
+table.cell(vwapTable2,1,0,tostring(round(SP500,1)) + "/SP500",  text_color = color.red,    text_halign = text.align_right)
+table.cell(vwapTable2,2,0,tostring(round(BTC,1))   + "/BTC", text_color = color.yellow, text_halign = text.align_right)
+table.cell(vwapTable2,3,0,tostring(round(SOX,1))   + "/SOX", text_color = color.green,  text_halign = text.align_right)
+table.cell(vwapTable2,4,0,tostring(round(BDI,1))   + "/BDI", text_color = color.aqua,   text_halign = text.align_right)
+
+MSCID = security("CAPITALCOM:MSCI","D",close[1])
+MSCI5 = security("CAPITALCOM:MSCI","D",close)
+MSCI = (round((MSCI5/MSCID),3)- 1)*100 
+plot(round(MSCI,1), "MSCI",    color=color.new(color.orange,0),style=usStyle,display=display.none)
+table.cell(vwapTable2,5,0,tostring(round(MSCI,1)) + "/MSCI",  text_color = color.orange,    text_halign = text.align_right)
+
+VTID = security("AMEX:VTI","D",close[1])
+VTI5 = security("AMEX:VTI","D",close)
+VTI = (round((VTI5/VTID),3)- 1)*100 
+plot(round(VTI,1), "VTI",    color=color.new(color.silver,0),style=usStyle,display=display.none)
+table.cell(vwapTable2,6,0,tostring(round(VTI,2)) + "/VTI",  text_color = color.silver,    text_halign = text.align_right)
+
+VTD = security("AMEX:VT","D",close[1])
+VT5 = security("AMEX:VT","D",close)
+VT = (round((VT5/VTD),3)- 1)*100 
+plot(round(VT,1), "VT",    color=color.new(color.olive,0),style=usStyle,display=display.none)
+table.cell(vwapTable2,7,0,tostring(round(VT,2)) + "/VT",  text_color = color.olive,    text_halign = text.align_right)
+
+//---------------
+
+plot2=plot(2,color=color.new(color.white,75),display=display.none)
+plotN2=plot(-2,color=color.new(color.white,75),display=display.none)
+plot3=plot(3,color=color.new(color.white,75),display=display.none)
+plotN3=plot(-3,color=color.new(color.white,75),display=display.none)
+
+fill(plot2,plot3,color=color.new(color.white,85))
+fill(plotN2,plotN3,color=color.new(color.white,85))
+
+
+
+

@@ -1,0 +1,98 @@
+//@version=4
+
+// What is this?
+// Visualize JPX top and bottom price limit .
+
+study("STOP","STOP",true)
+onoff_shsl = input(true,"値幅制限線")
+iShowStopH = input(90,"％・S高接近表示")
+iShowStopL = input(10,"％・S安接近表示")
+
+black           = #000000
+navy  = color.new(color.navy, 100)
+lime  = color.new(#5aff19,0)
+tlime = color.new(#5aff19,90)
+red   = color.new(#ff0000,0)
+yel   = color.yellow
+white = color.new(color.white,0)
+blue   = color.blue
+f_noRepaint(res, src)  => security(syminfo.tickerid, res, src[barstate.isrealtime ? 1:0])
+f_realtime(src)        => security(syminfo.tickerid, "D", src[barstate.isrealtime ? 1:0])
+
+c              = f_noRepaint( "D", close)
+
+p1 = c>=1     and c<100
+p2 = c>=100   and c<200
+p3 = c>=200   and c<500
+p4 = c>=500   and c<700
+p5 = c>=700   and c<1000
+p6 = c>=1000  and c<1500
+p7 = c>=1500  and c<2000
+p8 = c>=2000  and c<3000
+p9 = c>=3000  and c<5000
+p10 = c>=5000  and c<7000
+p11 = c>=7000  and c<10000
+p12 = c>=10000 and c<15000
+p13 = c>=15000 and c<20000
+
+r1  = f_realtime(c+30)
+r2  = f_realtime(c+50)
+r3  = f_realtime(c+80)
+r4  = f_realtime(c+100)
+r5  = f_realtime(c+150)
+r6  = f_realtime(c+300)
+r7  = f_realtime(c+400)
+r8  = f_realtime(c+500)
+r9  = f_realtime(c+700)
+r10 = f_realtime(c+1000)
+r11 = f_realtime(c+1500)
+r12 = f_realtime(c+3000)
+r13 = f_realtime(c+4000)
+f1  = f_realtime(c-30)
+f2  = f_realtime(c-50)
+f3  = f_realtime(c-80)
+f4  = f_realtime(c-100)
+f5  = f_realtime(c-150)
+f6  = f_realtime(c-300)
+f7  = f_realtime(c-400)
+f8  = f_realtime(c-500)
+f9  = f_realtime(c-700)
+f10 = f_realtime(c-1000)
+f11 = f_realtime(c-1500)
+f12 = f_realtime(c-3000)
+f13 = f_realtime(c-4000)
+
+sh             = (p1) ? r1: (p2) ? r2: (p3) ? r3: (p4) ? r4: (p5) ? r5: (p6) ? r6: (p7) ? r7: (p8) ? r8: (p9) ? r9: (p10) ? r10: (p11) ? r11: (p12) ? r12: (p13) ? r13: na
+sl             = (p1) ? f1: (p2) ? f2: (p3) ? f3: (p4) ? f4: (p5) ? f5: (p6) ? f6: (p7) ? f7: (p8) ? f8: (p9) ? f9: (p10) ? f10: (p11) ? f11: (p12) ? f12: (p13) ? f13: na
+
+shx            = sh-close
+slx            = close-sl
+range          = shx+slx
+shRange        = round((shx/range)*100)
+slRange        = round((slx/range)*100)
+
+stopH =not onoff_shsl? na :  not (slRange > iShowStopH) ? na : timeframe.isdaily ? sh[1] : timeframe.isintraday ? sh : na
+stopL =not onoff_shsl? na :  not (slRange < iShowStopL) ? na : timeframe.isdaily ? sl[1] : timeframe.isintraday ? sl : na
+
+plot_sh        = plot(stopH, "ストップ高",  style=plot.style_cross,  color=color.new(color.yellow,0),  linewidth=4, display=display.all)
+plot_sl        = plot(stopL, "ストップ安",  style=plot.style_cross,  color=color.new(color.yellow,0),  linewidth=4, display=display.all)
+
+locatTop=location.top
+locatBot=location.bottom
+
+plotshape(sh==close,"S高",style=shape.xcross,color=red, location=locatTop, size=size.small,text="",textcolor=color.white)
+plotshape(sl==close,"S安",style=shape.xcross,color=blue,  location=locatBot,size=size.small,text="",textcolor=color.white)
+
+plotshape(sh<close,"拡大高",style=shape.xcross,color=color.yellow, location=locatTop, size=size.small,text="",textcolor=color.white)
+plotshape(sl>close,"拡大安",style=shape.xcross,color=color.yellow, location=locatBot,size=size.small,text="",textcolor=color.white)
+
+
+// STOPtable = table.new(position=position.bottom_left, columns=10, rows=10, bgcolor=color.new(#000000,30),border_color=color.new(color.white,50),
+//  border_width=0, frame_color=color.new(color.white,50), frame_width=0)
+// tableSize = size.auto
+// table.cell(STOPtable, 0,0, text=tostring(round(slRange,0))+"%\n"+tostring(close)+"/"+tostring(round(c,0)),
+//  text_color=color.new(color.white,0),text_halign=text.align_right,  text_size=tableSize)
+// table.cell(STOPtable, 0,1, text=tostring(round(sh,0))+"/"+tostring(round(sl,0))+"\n"+tostring(round(slx,0))+"/"+tostring(round(range,0)),
+//  text_color=color.new(color.white,0),text_halign=text.align_right ,  text_size=tableSize)
+
+

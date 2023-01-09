@@ -1,0 +1,467 @@
+//@version=5
+
+//2022/04/01　5:15　駄目だと思った。やっぱり利幅を含み損に負けずに取っていくスタイルしかない。
+
+strategy(
+     "(Strategy)底天ATR ", 
+     overlay            = true, 
+     precision          = 3, 
+     pyramiding         = 10,
+     calc_on_every_tick = true,
+     max_bars_back      = 5000,
+     initial_capital    = 1000,
+     default_qty_type   = strategy.percent_of_equity, 
+     default_qty_value  = 12500, 
+     currency           = "USD",
+     commission_type    = strategy.commission.percent,
+     commission_value   = 0.04, 
+     margin_long        = 0, 
+     margin_short       = 0) 
+
+i_ROA    = input.int(10,  "Return Of Asset /%",  step=2)
+i_timer  = input.int(24,  "Nanpin timer /Hour",  step=2)
+i_anker  = input.int(-40, "Entry Anker /ATRlot", step=2)
+// i_ma =  input.int(12, "middle MA /h", options =[6,12,24])
+//i_Target  = input.int(100, "Profit Target hat% of ATR", step=2)
+tf = timeframe.multiplier
+i_Target  = (i_anker*-1)*2
+//6h -40
+//12h -50
+//24h -50
+
+
+//////////////////////////////////////////////////////////////////////////////////
+/////  ENV  /////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+//////  ATR //////
+ATR     = request.security(syminfo.tickerid,'D',ta.atr(14),lookahead=barmerge.lookahead_on)
+ATRlot  = ATR*0.01
+ATRpct  = (ATR/close)*100
+
+//////  EMA //////
+EMA5  = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 5*24) , lookahead=barmerge.lookahead_on)
+EMA10 = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 10*24) , lookahead=barmerge.lookahead_on)
+EMA25 = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 25*24) , lookahead=barmerge.lookahead_on)
+EMA50 = request.security(syminfo.tickerid,'60',ta.ema(hlc3, 50*24) , lookahead=barmerge.lookahead_on)
+DivEMA5  = ((close - EMA5)/close)*100
+DivEMA10 = ((close - EMA10)/close)*100
+DivEMA25 = ((close - EMA25)/close)*100
+DivEMA50 = ((close - EMA50)/close)*100
+
+overheat = DivEMA5>10 or DivEMA10>10 or DivEMA25>10 or DivEMA50>10
+
+/////////////////////////////////////////////////////////////////////////////////
+/////  CUSTOMIZE  //////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+//////  VWMA //////
+ma1    = ta.vwma(hlc3, 60/tf)
+ma2    = ta.vwma(hlc3, 120/tf)
+ma3    = ta.vwma(hlc3, 180/tf)
+ma6    = ta.vwma(hlc3, 360/tf)
+ma12   = ta.vwma(hlc3, 720/tf)
+ma24   = ta.vwma(hlc3, 1440/tf)
+
+opentrades_0 = strategy.opentrades == 0
+opentrades_1 = strategy.opentrades == 1
+opentrades_2 = strategy.opentrades == 2
+opentrades_3 = strategy.opentrades == 3
+opentrades_4 = strategy.opentrades == 4
+
+
+////////////////////////////////////////////////////////////////////////////////
+////// IN /////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+//middle = ((ma6*4)+(ma12*2)+ma24)/7
+
+i_ma = tf == 5 ? ma6 : tf == 10 ? ma12 : tf == 15 ? ma24 : na
+
+i_MAforTable = tf == 5 ? 6 : tf == 10 ? 12 : tf == 15 ? 24 : na
+
+middle = i_ma
+
+sensor_mid = middle-(ATRlot*(i_anker*-1))
+
+anker_mid = ta.crossover(close , sensor_mid) 
+
+dip = close < sensor_mid
+dipped = dip[6] // and dip[9] and dip[10] and dip[11]
+
+// dipped =  dip[1] and dip[2] and dip[3] and dip[4] and dip[5] and dip[6] and dip[7] and dip[8] and dip[9] and dip[10]
+//          and dip[11] and dip[12] and dip[13] and dip[14] and dip[15] and dip[16] and dip[17] and dip[18] and dip[19] and dip[20]
+//          and dip[21] and dip[22] and dip[23] and dip[24] and dip[25] and dip[26] and dip[27] and dip[28] and dip[29] and dip[30]
+//          and dip[31] and dip[32] and dip[33] and dip[34] and dip[35] and dip[36] and dip[37] and dip[38] and dip[39] and dip[40]
+//          and dip[41] and dip[42] and dip[42] and dip[44] and dip[45] and dip[46] and dip[47] and dip[48] and dip[49] and dip[50]
+//          and dip[51] and dip[52] and dip[43] and dip[54] and dip[55] and dip[56] and dip[57] and dip[58] and dip[59] and dip[60]
+
+takeoff = close > sensor_mid
+// flying  = takeoff and takeoff[1] and takeoff[2]  and takeoff[3] and takeoff[4]  and takeoff[5] and takeoff[6]  and takeoff[7] 
+
+
+vwma = takeoff and takeoff[1]
+     and ( anker_mid[2] or  anker_mid[3] or  anker_mid[4] or  anker_mid[5] )
+     and (dip[6] or dip[7] or dip[8] ) and dip[9] and dip[10]
+
+
+
+// OTHER ////////////////////////////////////////////////////////////////////////
+
+barcount_1h = 60/tf
+
+
+await   = strategy.opentrades.entry_bar_index(strategy.opentrades - 1) + (i_timer*barcount_1h)
+timer   = await < bar_index
+
+// comeback = close - ta.lowest(low,30)
+// ATRhalf  = ATR/1
+// safety   = comeback < ATRhalf
+
+
+
+// QTY ////////////////////////////////////////////////////////////////////////
+         
+
+ROA     = i_ROA/100
+Target = i_Target/100
+WB      = strategy.initial_capital + strategy.netprofit
+balance = WB > 200
+tradeProfit = WB*ROA  
+entrySize   = (WB*ROA)/(ATR*Target) // これはtradeProfit/profitRange
+
+Lev = 1
+qty = entrySize*Lev
+//qty = (1000*ROA)/(ATR*Target) //テスト
+
+CurrentLeverage = (qty*close)/WB
+
+
+/////////////////////////////////////////////////////////////////////////////////
+// ORDER ///////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
+
+
+plot(ROA, "x_ROA",       display = display.none)
+plot(ATR, "x_ATR",       display = display.none)
+plot(Target, "x_Target", display = display.none)
+
+
+trigger1st  = vwma and balance and not overheat // and safety 
+trigger     = vwma and balance and not overheat and timer // and safety
+
+strategy.order("1", strategy.long, when = trigger1st and opentrades_0, qty = qty*1, alert_message = "test message")
+strategy.order("2", strategy.long, when = trigger    and opentrades_1, qty = qty*2, alert_message = "test message")
+// strategy.order("3", strategy.long, when = trigger    and opentrades_2, qty = qty*1, alert_message = "test message")
+
+EXIT_sensor_mid = middle-(ATRlot*(i_anker))
+
+
+A =  high[1] > EXIT_sensor_mid  // and close[3] > EXIT_sensor_mid  and close[4] > EXIT_sensor_mid  and close[5] > EXIT_sensor_mid 
+B = ta.crossunder( close , EXIT_sensor_mid )
+
+EXIT_anker_mid = A and B
+strategy.close_all(when = EXIT_anker_mid , comment = "closed ")
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+////// LIQUIDATION (MarginCall) ///////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+// i_cum = input.float(75.0, "MaintenanceAmount (USDT)")
+i_cum = input.float(10.0, "MaintenanceAmount (USDT)")
+i_MMR = input.float(1.0, "MaintenanceMargin Rate (%)")
+
+EP       = strategy.position_avg_price
+position = strategy.position_size
+
+NotionalValue = EP*position
+cum     = i_cum
+side    = strategy.position_size > 0 ? 1 :-1
+MMR     = i_MMR/100 
+TMM     = 0
+UNPL    = 0
+
+Liquid = (WB-TMM+UNPL+cum-side*position*EP)/(position*MMR-side*position)
+
+anker_MGC  = low<Liquid
+triger_MGC = anker_MGC  
+strategy.close_all( when=triger_MGC, comment = "#### DEAD ###")
+
+//plot(strategy.opentrades<0?na:Liquid, "You Are Dead", color.new(#ff0000,50), style=plot.style_areabr, linewidth =1)
+plot(strategy.opentrades<=1?na:Liquid, "You Are Dead", color.new(#ff0000,50), style=plot.style_areabr, linewidth =1)
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////  PLOT  ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+plot(middle, "middle", color.lime, linewidth=1)
+plot(sensor_mid, "ENTRY middle", color.red, linewidth=1)
+plot(EXIT_sensor_mid, "EXIT middle", color.aqua, linewidth=1)
+
+
+plot(EMA5,  color=color.new(color.aqua, 50),     title='ema5',  linewidth=3, style=plot.style_stepline, display=display.all)
+plot(EMA10, color=color.new(color.blue, 50),     title='ema10', linewidth=3, style=plot.style_stepline, display=display.none)
+plot(EMA25, color=color.new(color.yellow, 50),   title='ema25', linewidth=3, style=plot.style_stepline, display=display.none)
+plot(EMA50, color=color.new(color.purple, 50),   title='ema50', linewidth=3, style=plot.style_stepline, display=display.none)
+
+
+// p_ma1  = plot(ma1,  color=color.new(color.blue,  0),     title='ma1',  linewidth=1, display=display.all)
+// p_ma2  = plot(ma2,  color=color.new(color.aqua,  50),    title='ma2',  linewidth=1, display=display.all)
+// p_ma3  = plot(ma3,  color=color.new(color.fuchsia,  50), title='ma3',  linewidth=1, display=display.all)
+// p_ma6  = plot(ma6,  color=color.new(color.white,  0),    title='ma6',  linewidth=1, display=display.all)
+// p_ma12 = plot(ma12, color=color.new(color.white,  0),    title='ma12', linewidth=2, display=display.none)
+// p_ma24 = plot(ma24, color=color.new(color.white,  50),   title='ma24', linewidth=3, display=display.none)
+
+
+p_AveEP       = plot(strategy.position_avg_price, "x", color.new(color.yellow,0), style=plot.style_stepline_diamond)
+// p_sensor_ma6  = plot(sensor_ma6,  color=color.new(#ff0000, 50), title='sensor_ma6', display=display.none)
+// p_sensor_ma12 = plot(sensor_ma12, color=color.new(#ff0000, 50), title='sensor_ma12', display=display.none)
+// fill(p_sensor_ma6,p_sensor_ma12, color=color.new(#ff0000, 90))
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////  TABLE  ///////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////
+
+//BGC
+bgc = triger_MGC==true ? color.new(#ff0000,30) : na
+bgcolor(bgc)
+
+capital       = strategy.initial_capital
+capital_ratio = capital/position
+capacity      = close - Liquid 
+
+// var table TableLev = table.new(position.bottom_right, 10, 10)
+// table.cell(TableLev,0,0, "InitialCapital ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,1, "NotionalValue ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,2, "PNL ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,3, "CapitalRatio ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,4, "AveEntryPrice ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,5, "Capacity  ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,0,6, "Liquidation  ", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,0, str.tostring(capital)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,1, str.tostring(position)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,2, str.tostring(strategy.openprofit)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,3, str.tostring(math.round(capital_ratio,1))+" %", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,4, str.tostring(strategy.position_avg_price)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,5, str.tostring(capacity)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableLev,1,6, str.tostring(Liquid)+" USDT", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+var table TableX = table.new(position.bottom_right, 100, 100)
+table.cell(TableX,0,5,  "ROA" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,5,  str.tostring(i_ROA),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+table.cell(TableX,0,6,  "Anker" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,6,  str.tostring(i_anker),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+table.cell(TableX,0,7,  "Taret" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,7,  str.tostring(i_Target),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+table.cell(TableX,0,10,  "ma" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,10,  str.tostring(i_MAforTable),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+table.cell(TableX,0,20,  "tf" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+table.cell(TableX,1,20,  str.tostring(tf),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+
+var table TableA = table.new(position.bottom_left, 10, 20)
+table.cell(TableA,0,0, "asset", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,1, "equity", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,3, "profit:loss ", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,5, "max_drawdown", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,0,8, "win:lose ", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,0, str.tostring(math.round(WB,0)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,1, str.tostring(math.round(strategy.equity,1)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,3, str.tostring(math.round(strategy.grossprofit,0))+ " vs "+ str.tostring(math.round(strategy.grossloss,0))+ " ("+str.tostring(math.round(strategy.netprofit,0))+ ")", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,5, str.tostring(math.round(strategy.max_drawdown,1)), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableA,1,8, str.tostring(math.round(strategy.wintrades,1))+ " vs "+ str.tostring(math.round(strategy.losstrades,1))+ " ("+str.tostring(math.round(strategy.closedtrades,1))+ ")", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+
+
+
+var table TableB = table.new(position.top_center, 100, 100)
+table.cell(TableB,0,0, "", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+table.cell(TableB,1,0, str.tostring(math.round((bar_index/barcount_1h)/24,1))+" days", text_color = color.new(#ffffff,0),text_halign=text.align_left)
+
+
+//table.cell(TableX,1,0,  str.tostring(math.round(CurrentLeverage,1)),  text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableX,0,0,  "Lev" , text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableX,0,1,  "input profit target %", text_color = color.new(#ffffff,0),text_halign=text.align_right)
+// table.cell(TableX,1,1,  str.tostring(math.round(i_Target,2)), text_color = color.new(#ffffff,0),text_halign=text.align_right)
+
+
+
+var table T = table.new(position.top_right, 100, 100)
+
+table.cell(T,0,0, "WB ", text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,0, str.tostring(math.round(WB,0)) + " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,2, "ATR ", text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,2, str.tostring(math.round(ATR,3)) + " " , text_color = color.new(#ffffff,0) , bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,4, "ATRpct ", text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,4, str.tostring(math.round(ATRpct,2)) + " " , text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) , text_halign=text.align_right)
+table.cell(T,0,7, " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,7, " " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,10, "tradeProfit " , text_color = color.new(#ffffff,0),  bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,10, "$ " + str.tostring(math.round(tradeProfit,2)) , text_color = color.new(#ffffff,0) , bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+//table.cell(T,0,30, "profitRange" , text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+//table.cell(T,1,30, "$ " + str.tostring(math.round(profitRange,2)) , text_color = color.new(#ffffff,0) , bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,0,50, "entrySize", text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+table.cell(T,1,50, str.tostring(math.round(entrySize,2))+" x"  , text_color = color.new(#ffffff,0), bgcolor= color.new(#000000,0) ,text_halign=text.align_right)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//保管庫////保管庫////保管庫////保管庫////保管庫////保管庫////保管庫////保管庫//
+
+//手仕舞いしてから一定時間寝かせる
+// i_cooldown = input.int(6,"cooldown /Hour",step=2)
+// cooldown = strategy.closedtrades >0 ?strategy.closedtrades.exit_bar_index(strategy.closedtrades - 1) + (i_cooldown*20)  < bar_index : close > 0
+
+
+//一定の下落をしてからでないと、エントリーできなくする
+
+// lower_Lv2     = strategy.position_avg_price-(sec_ATRlot*50)
+// lower_Lv3     = strategy.position_avg_price-(sec_ATRlot*100)
+// lower_Lv4     = strategy.position_avg_price-(sec_ATRlot*200)
+// nanpin_Lv2    = close < lower_Lv2
+// nanpin_Lv3    = close < lower_Lv3
+// nanpin_Lv4    = close < lower_Lv4
+
+
+//様々なローソク足の検知
+
+// bull = DivEMA5>0 and DivEMA10>0 and DivEMA25>0 and DivEMA50>0
+// bear = 0>DivEMA5 and 0>DivEMA10 and 0>DivEMA25 and 0>DivEMA50
+
+// can_size    = ((high-low)/close)*100
+// can_detect  = ATRpct*0.1
+// can_big     = can_size > can_detect
+// can_detect_huge  = ATRpct*0.2
+// can_big_huge     = can_size > can_detect_huge
+// can_bull         = close > open 
+// can_bear         = close < open 
+// can_up           = open > open[1] and close > close[1]
+// can_down         = open < open[1] and close < close[1]
+// can_PERFECT_up   = open > open[1] and close > close[1] and low > low[1] and high > high[1]
+// can_PERFECT_down = open < open[1] and close < close[1] and low < low[1] and high < high[1]
+// can_BIG_bull     = can_big and can_bull
+// can_BIG_bear     = can_big and can_bear
+// can_PERFECT_BIG_up   = can_big and can_PERFECT_up
+// can_PERFECT_BIG_down = can_big and can_PERFECT_down
+
+
+//一定期間の底と天井からの乖離
+
+// max5Dpct  = request.security(syminfo.tickerid,'60',ta.highest(5*24) , lookahead=barmerge.lookahead_on)
+// max10Dpct = request.security(syminfo.tickerid,'60',ta.highest(10*24) , lookahead=barmerge.lookahead_on)
+// max25Dpct = request.security(syminfo.tickerid,'60',ta.highest(25*24) , lookahead=barmerge.lookahead_on)
+// max50Dpct = request.security(syminfo.tickerid,'60',ta.highest(50*24) , lookahead=barmerge.lookahead_on)
+// min5Dpct  = request.security(syminfo.tickerid,'60',ta.lowest(5*24) , lookahead=barmerge.lookahead_on)
+// min10Dpct = request.security(syminfo.tickerid,'60',ta.lowest(10*24) , lookahead=barmerge.lookahead_on)
+// min25Dpct = request.security(syminfo.tickerid,'60',ta.lowest(25*24) , lookahead=barmerge.lookahead_on)
+// min50Dpct = request.security(syminfo.tickerid,'60',ta.lowest(50*24) , lookahead=barmerge.lookahead_on)
+// Distance_5  =  (max5Dpct+min5Dpct)/2
+// Distance_10 =  (max10Dpct+min10Dpct)/2
+// Distance_25 =  (max25Dpct+min25Dpct)/2
+// Distance_50 =  (max50Dpct+min50Dpct)/2
+// plot(Distance_5,color=color.yellow)
+// plot(Distance_10,color=color.yellow)
+// plot(Distance_25,color=color.yellow)
+// plot(Distance_50,color=color.yellow)
+
+
+
+// VWMA ////////////////////////////////////////////////////////////////////////
+
+
+// dip = close<sensor_mid
+
+//ipped_Lv1 = dip[1] and dip[2] and dip[3] and dip[4] and dip[5] // and dip[6] and dip[7] and dip[8] and dip[9] and dip[10]
+
+// dipped_Lv2 = dip[1] and dip[2] and dip[3] and dip[4] and dip[5] and dip[6] and dip[7] and dip[8] and dip[9] and dip[10]
+//          and dip[11] and dip[12] and dip[13] and dip[14] and dip[15] and  dip[16] and dip[17] and dip[18] and dip[19] and dip[20]
+//          and dip[21] and dip[22] and dip[23] and dip[24] and dip[25] and dip[26] and dip[27] and dip[28] and dip[29] and dip[30]
+         
+// dipped_Lv3 =  dip[5] and dip[6] and dip[7] and dip[8] and dip[9] and dip[10]
+//          and dip[11] and dip[12] and dip[13] and dip[14] and dip[15] and dip[16] and dip[17] and dip[18] and dip[19] and dip[20]
+//          and dip[21] and dip[22] and dip[23] and dip[24] and dip[25] and dip[26] and dip[27] and dip[28] and dip[29] and dip[30]
+//          and dip[31] and dip[32] and dip[33] and dip[34] and dip[35] and dip[36] and dip[37] and dip[38] and dip[39] and dip[40]
+//          and dip[41] and dip[42] and dip[42] and dip[44] and dip[45] and dip[46] and dip[47] and dip[48] and dip[49] and dip[50]
+//          and dip[51] and dip[52] and dip[43] and dip[54] and dip[55] and dip[56] and dip[57] and dip[58] and dip[59] and dip[60]
+         
+// takeoff = close>sensor_mid
+
+//takeoff_Lv1 = anker_mid[3] and takeoff and takeoff[1] and takeoff[2] 
+         
+
+// sensor_ma6  = ma6-(ATRlot*20)
+// sensor_ma12 = ma12-(ATRlot*30)
+
+// anker_ma6   = low[1]<sensor_ma6 or low[2]<sensor_ma6 or low[3]<sensor_ma6 or low[4] <sensor_ma6 or low[5] <sensor_ma6
+//  or close[6]<sensor_ma6 or close[7]<sensor_ma6 or close[8]<sensor_ma6 or close[9] <sensor_ma6 or close[10] <sensor_ma6
+// anker_ma12  = low[1]<sensor_ma12 or low[2]<sensor_ma12 or low[3]<sensor_ma12 or low[4] <sensor_ma12 or low[5] <sensor_ma12
+//  or close[6]<sensor_ma12 or close[7]<sensor_ma12 or close[8]<sensor_ma12 or close[9] <sensor_ma12 or close[10] <sensor_ma12 
+
+// sensor_entry_Lv1 = ta.vwma(hlc3, 2 *20)
+// sensor_entry_Lv2 = ta.vwma(hlc3, 2 *20)
+// sensor_entry_Lv3 = ta.vwma(hlc3, 2 *20)
+// sensor_entry_Lv4 = ta.vwma(hlc3, 6 *20)
+
+// anker_entry  = opentrades_0 ? low > sensor_entry_Lv1 and low[1] > sensor_entry_Lv1 :
+//               opentrades_1 ? low > sensor_entry_Lv2 and low[1] > sensor_entry_Lv2 : 
+//               opentrades_2 ? low > sensor_entry_Lv3 and low[1] > sensor_entry_Lv3 : 
+//               opentrades_3 ? low > sensor_entry_Lv4 and low[1] > sensor_entry_Lv4 : na
+
+
+// vwma_Lv1 = anker_ma6 and anker_ma12 and anker_entry
+// vwma_Lv2 = anker_ma6 and anker_ma12 and anker_entry 
+// vwma_Lv3 = anker_ma6 and anker_ma12 and anker_entry
+// vwma_Lv4 = anker_ma6 and anker_ma12 and anker_entry 
+
+// trigger_Lv1   = opentrades_0 and vwma_Lv1 and balance and not overheat and  safety
+// trigger_Lv2   = opentrades_1 and vwma_Lv1 and balance and timer and safety
+// trigger_Lv3   = opentrades_2 and vwma_Lv1 and balance and timer and safety
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// LevLv1 = 1
+// LevLv2 = 0
+// LevLv3 = 0
+// LevLv4 = 0
+
+// qty_Lv1 = entrySize*LevLv1
+// qty_Lv2 = entrySize*LevLv2
+// qty_Lv3 = entrySize*LevLv3
+// qty_Lv4 = entrySize*LevLv4

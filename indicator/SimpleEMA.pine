@@ -1,0 +1,28 @@
+//@version=4
+study("EMA LINE", overlay = true)
+
+// get HTF moving averages
+ema5 = security(syminfo.tickerid, '1440', ema(close, 5), lookahead = true)
+ema5cur = security(syminfo.tickerid, '1440', ema(close, 5), lookahead = false)
+ema25 = security(syminfo.tickerid, '1440', ema(close, 25), lookahead = true)
+ema25cur = security(syminfo.tickerid, '1440', ema(close, 25), lookahead = false)
+ema50 = security(syminfo.tickerid, '1440', ema(close, 50), lookahead = true)
+ema50cur = security(syminfo.tickerid, '1440', ema(close, 50), lookahead = false)
+// is this last bar?
+islast = security(syminfo.tickerid, '1440', barstate.islast, lookahead = true)
+//if not last bar then draw non-repaint historical moving average
+plot(islast ? na : ema5, color = islast ? na : color.blue, linewidth = 2,display=display.none)
+plot(islast ? na : ema25, color = islast ? na : color.red, linewidth = 2,display=display.none)
+plot(islast ? na : ema50, color = islast ? na : color.red, linewidth = 2,display=display.none)
+//calculate and keep the beginning of line
+lastbar_index = 0
+lastbar_index := change(time('1440')) != 0 ? 0 : nz(lastbar_index[1]) + 1
+// draw real time higher time frame moving averare
+line emahtf5 = line.new(bar_index, ema5cur, bar_index - lastbar_index, ema5cur, color = color.aqua, width = 2)
+line emahtf25 = line.new(bar_index, ema25cur, bar_index - lastbar_index, ema25cur, color = color.lime, width = 2)
+line emahtf50 = line.new(bar_index, ema50cur, bar_index - lastbar_index, ema50cur, color = color.red, width = 2)
+// delete old lines if it's not the last one in htf periof
+if change(time('1440')) == 0
+    line.delete(emahtf5[1])
+    line.delete(emahtf25[1])
+    line.delete(emahtf50[1])

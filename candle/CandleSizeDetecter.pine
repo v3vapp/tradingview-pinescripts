@@ -1,0 +1,60 @@
+//@version=5
+indicator('Candle Size Detector', 'CSD', true)
+
+ActivePips  = input.bool(false,   "Use Pips?")
+ActivePrice = input.bool(false,   "Use Price?")
+ActivePct   = input.bool(true,    "Use Percentage?")
+DetectPips  = input.float(1000.0, "Tatget Pips",       step=1)
+DetectPrice = input.float(5.0,    "Tatget Price",      step=0.1)
+DetectPct   = input.float(5.0,    "Tatget Percentage", step=0.1)
+
+CandleSizePct   = math.abs(((high-low)/close)*100)
+CandleSizePrice = math.abs(high-low)
+CandleSizePips  = math.abs((high-low)/(syminfo.mintick))
+
+Pct    = CandleSizePct   > DetectPct
+Price  = CandleSizePrice > DetectPrice
+Pips   = CandleSizePips  > DetectPips
+
+condition = Pct or Price or Pips 
+
+var bullOpen  = 0.0
+var bullHigh  = 0.0
+var bullLow   = 0.0
+var bullClose = 0.0
+var bearOpen  = 0.0
+var bearHigh  = 0.0
+var bearLow   = 0.0
+var bearClose = 0.0
+
+if ActivePrice == true
+    bullOpen  := close > open and Price ? open  : na
+    bullHigh  := close > open and Price ? high  : na
+    bullLow   := close > open and Price ? low   : na
+    bullClose := close > open and Price ? close : na
+    bearOpen  := close < open and Price ? open  : na
+    bearHigh  := close < open and Price ? high  : na
+    bearLow   := close < open and Price ? low   : na
+    bearClose := close < open and Price ? close : na
+else if ActivePct == true
+    bullOpen  := close > open and Pct ? open  : na
+    bullHigh  := close > open and Pct ? high  : na
+    bullLow   := close > open and Pct ? low   : na
+    bullClose := close > open and Pct ? close : na
+    bearOpen  := close < open and Pct ? open  : na
+    bearHigh  := close < open and Pct ? high  : na
+    bearLow   := close < open and Pct ? low   : na
+    bearClose := close < open and Pct ? close : na
+else if ActivePips == true
+    bullOpen  := close > open and Pips ? open  : na
+    bullHigh  := close > open and Pips ? high  : na
+    bullLow   := close > open and Pips ? low   : na
+    bullClose := close > open and Pips ? close : na
+    bearOpen  := close < open and Pips ? open  : na
+    bearHigh  := close < open and Pips ? high  : na
+    bearLow   := close < open and Pips ? low   : na
+    bearClose := close < open and Pips ? close : na
+
+plotcandle(bullOpen,bullHigh,bullLow,bullClose, color=color.new(#00ced1,0), wickcolor=color.new(#00ced1,0), bordercolor=color.new(#00ced1,0))
+plotcandle(bearOpen,bearHigh,bearLow,bearClose, color=color.new(#FF00FF,0), wickcolor=color.new(#FF00FF,0), bordercolor=color.new(#FF00FF,0))
+alertcondition(condition, "Candle Size Detector","Candle Detected")

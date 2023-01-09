@@ -1,0 +1,41 @@
+//@version=5
+indicator(title='Order Long', shorttitle='Long', overlay=true)
+
+ATR       = request.security(syminfo.tickerid,'D',ta.atr(5),lookahead=barmerge.lookahead_on)
+ATRpct    = (ATR/close)*100
+ATR_1_pct = ATRpct*0.01
+leverage  = math.ceil(30/(ATR_1_pct*10))
+
+// ma6    = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 360))
+// ma12   = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 720))
+// ma24   = request.security(syminfo.tickerid,'1',ta.vwma(hlc3, 1440))
+
+LONG_TF_PT   = close+(ATR*0.1)
+LONG_TF_LC   = close-(ATR*0.2)
+LONG_MA_LC   = close-(ATR*0.03)
+
+
+plot(leverage,  "Leverage  #0", display=display.none)
+plot(LONG_TF_PT, 'LONG TrendFollow/LongMovingAverage ProfitTake #1', display=display.none)
+plot(LONG_TF_LC, 'LONG TrendFollow StopLoss     #2', display=display.none)
+plot(LONG_MA_LC, 'LONG MovingAverage StopLoss   #3', display=display.none)
+
+
+TF_orderCond = close > 0
+alertcondition(TF_orderCond,"LONG_TrendFollow", message ='{ "x_PT":{{plot_1}},"x_SL":{{plot_2}}, "x_side":"BUY", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+
+MA_orderCond = close > 0
+alertcondition(MA_orderCond,"LONG_MovingAverage", message ='{ "x_PT":{{plot_1}},"x_SL":{{plot_3}}, "x_side":"BUY", "x_leverage":{{plot_0}},"x_symbol":"{{ticker}}"}')
+
+
+LONG_PT_LINE  = line.new(bar_index[1000],timeframe.period=="1"?LONG_TF_PT:na, bar_index+ 15 ,LONG_TF_PT, color = color.new(color.aqua,0), style=line.style_dotted)
+line.delete(LONG_PT_LINE[1])
+LONG_LC_LINE  = line.new(bar_index[1000], timeframe.period=="1"?LONG_TF_LC:na, bar_index+ 15, LONG_TF_LC, color = color.new(#ff0000,0), style=line.style_dotted)
+line.delete(LONG_LC_LINE[1])
+
+ 
+var table TableA = table.new(position.top_right, 10, 10)
+table.cell(TableA,0,0, str.tostring(syminfo.ticker)+"\n"+str.tostring(math.round(ATRpct,1))+"%"+" Lv."+str.tostring(leverage), text_color = color.new(#ffffff,0),text_halign=text.align_left)
+
+
+
